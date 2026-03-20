@@ -203,8 +203,7 @@ apt-get install -y --no-install-recommends \
 apt-get install -y --no-install-recommends \
     pulseaudio \
     pulseaudio-utils \
-    alsa-utils \
-    pavucontrol
+    alsa-utils
 
 # ── Security ────────────────────────────────────────────────────────────────
 apt-get install -y --no-install-recommends \
@@ -212,7 +211,6 @@ apt-get install -y --no-install-recommends \
     apparmor-utils \
     apparmor-profiles \
     apparmor-profiles-extra \
-    ufw \
     cryptsetup \
     libpam-tmpdir \
     libpam-umask \
@@ -246,8 +244,7 @@ apt-get install -y \
     grub-efi-amd64-signed \
     shim-signed \
     initramfs-tools \
-    casper \
-    lupin-casper
+    casper
 
 # ── Misc utilities ──────────────────────────────────────────────────────────
 apt-get install -y --no-install-recommends \
