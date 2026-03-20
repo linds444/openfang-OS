@@ -25,6 +25,12 @@ BUILD_ARGS   := $(DOCKER_PLATFORM) \
                 --build-arg VERSION=$(VERSION) \
                 --build-arg ARCH=$(ARCH)
 
+# Named Docker volume for the work/rootfs directory.
+# Using a named volume (instead of a host bind mount) avoids overlay-on-overlay
+# filesystem issues that cause debootstrap tar to fail when extracting packages
+# that require xattr/capability support (e.g. libcap2-bin, ping, etc.).
+WORK_VOLUME  := openfang-work-$(VERSION)
+
 .PHONY: all iso image run clean builder aish openfang-ctl \
         dev-shell lint check-deps help
 
@@ -52,6 +58,7 @@ help:
 	@echo "  ARCH=$(ARCH)"
 	@echo "  UBUNTU_VER=$(UBUNTU_VER)"
 	@echo "  BUILDER_IMG=$(BUILDER_IMG)"
+	@echo "  WORK_VOLUME=$(WORK_VOLUME)"
 
 ## Check build dependencies
 check-deps:
@@ -89,9 +96,10 @@ openfang-ctl:
 iso: builder
 	@echo "[*] Building ISO: $(ISO_NAME)..."
 	mkdir -p $(BUILD_DIR)
+	docker volume create $(WORK_VOLUME) > /dev/null
 	docker run --rm --privileged $(DOCKER_PLATFORM) \
 		-v "$(PWD)/$(BUILD_DIR):/output" \
-		-v "$(PWD)/build/work:/build/work" \
+		-v "$(WORK_VOLUME):/build/work" \
 		-v "$(PWD)/rootfs:/rootfs:ro" \
 		-v "$(PWD)/$(BUILD_DIR)/bin:/output/bin:ro" \
 		-e ISO_NAME=$(ISO_NAME) \
@@ -106,6 +114,7 @@ image: iso
 	@echo "[*] Building disk image: $(IMG_NAME)..."
 	docker run --rm --privileged $(DOCKER_PLATFORM) \
 		-v "$(PWD)/$(BUILD_DIR):/output" \
+		-v "$(WORK_VOLUME):/build/work" \
 		-e ISO_NAME=$(ISO_NAME) \
 		-e IMG_NAME=$(IMG_NAME) \
 		$(BUILDER_IMG) bash /scripts/image.sh
@@ -153,10 +162,11 @@ run-gui:
 
 ## Drop into build container shell
 dev-shell: builder
+	docker volume create $(WORK_VOLUME) > /dev/null
 	docker run --rm -it --privileged $(DOCKER_PLATFORM) \
 		-v "$(PWD):/workspace" \
 		-v "$(PWD)/$(BUILD_DIR):/output" \
-		-v "$(PWD)/build/work:/build/work" \
+		-v "$(WORK_VOLUME):/build/work" \
 		-w /workspace \
 		$(BUILDER_IMG) /bin/bash
 
@@ -168,6 +178,7 @@ lint:
 ## Clean build artifacts
 clean:
 	rm -rf $(BUILD_DIR) $(WORK_DIR)
+	docker volume rm $(WORK_VOLUME) 2>/dev/null || true
 	@if [ -d aish ]; then cd aish && cargo clean; fi
 	@if [ -d openfang-ctl ]; then cd openfang-ctl && cargo clean; fi
 	@echo "[+] Cleaned"
