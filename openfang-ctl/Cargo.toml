@@ -1,0 +1,45 @@
+[package]
+name        = "openfang-ctl"
+version     = "0.1.0"
+edition     = "2021"
+description = "openfang-ctl — OpenFang OS system control tool"
+authors     = ["OpenFang OS Project"]
+license     = "MIT"
+
+[[bin]]
+name = "openfang-ctl"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio    = { version = "1", features = ["full"] }
+
+# HTTP client
+reqwest  = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# Serialization
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+toml        = "0.8"
+
+# CLI argument parsing
+clap = { version = "4", features = ["derive", "color"] }
+
+# Colored output
+colored = "2"
+
+# Formatting
+humantime = "2"
+bytesize  = "1"
+
+# Error handling
+anyhow    = "1"
+
+# Table output
+comfy-table = "7"
+
+[profile.release]
+opt-level = 3
+lto       = true
+codegen-units = 1
+strip     = true

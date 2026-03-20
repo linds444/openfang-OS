@@ -1,0 +1,13 @@
+NAME="OpenFang OS"
+VERSION="0.1.0"
+ID=openfang
+ID_LIKE=alpine
+PRETTY_NAME="OpenFang OS 0.1.0"
+VERSION_ID="0.1.0"
+HOME_URL="https://github.com/RightNow-AI/openfang-OS"
+BUG_REPORT_URL="https://github.com/RightNow-AI/openfang-OS/issues"
+DOCUMENTATION_URL="https://github.com/RightNow-AI/openfang-OS/blob/main/docs/getting-started.md"
+SUPPORT_URL="https://github.com/RightNow-AI/openfang"
+LOGO="openfang"
+ANSI_COLOR="1;36"
+BUILD_ID="@BUILD_ID@"

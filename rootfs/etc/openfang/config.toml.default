@@ -1,0 +1,69 @@
+# OpenFang OS — Default Configuration
+# This file is copied to /etc/openfang/config.toml on first boot if no config exists.
+# Edit /etc/openfang/config.toml to customize.
+
+[system]
+hostname = "openfang"
+timezone = "UTC"
+locale   = "en_US.UTF-8"
+
+[user]
+name  = "ai"
+shell = "/usr/bin/aish"
+
+[llm]
+provider = "openai"
+api_key  = ""
+base_url = ""
+model    = "gpt-4o-mini"
+timeout  = 30
+
+[aish]
+confirm_before_run  = true
+confirm_destructive = true
+show_generated_cmd  = true
+max_tokens          = 512
+system_prompt       = ""
+
+[agents]
+enabled    = true
+config_dir = "/etc/openfang/agents"
+log_dir    = "/var/log/openfang/agents"
+
+[agents.api]
+host       = "127.0.0.1"
+port       = 8080
+auth_token = ""
+
+[agents.system_monitor]
+enabled  = true
+interval = 60
+
+[agents.security_guard]
+enabled      = true
+interval     = 300
+alert_email  = ""
+
+[agents.ai_assistant]
+enabled = true
+
+[security]
+apparmor             = true
+firewall_allow_ports = [22, 8080]
+auto_update          = true
+ssh_key_only         = true
+
+[network]
+interface = "eth0"
+dhcp      = true
+
+[storage]
+encrypt_root  = true
+readonly_root = false
+data_mount    = "/data"
+
+[logging]
+level     = "info"
+log_dir   = "/var/log/openfang"
+max_size  = "100MB"
+max_files = 10

@@ -1,0 +1,64 @@
+# OpenFang OS — AppArmor profile for the OpenFang Agent Runtime
+
+#include <tunables/global>
+
+/usr/bin/openfang {
+    #include <abstractions/base>
+    #include <abstractions/nameservice>
+    #include <abstractions/openssl>
+    #include <abstractions/ssl_certs>
+
+    # Binary
+    /usr/bin/openfang mr,
+
+    # Config and data
+    /etc/openfang/ r,
+    /etc/openfang/** r,
+    /data/openfang/ rw,
+    /data/openfang/** rw,
+
+    # Logs
+    /var/log/openfang/ rw,
+    /var/log/openfang/** rw,
+
+    # Runtime
+    /run/openfang/ rw,
+    /run/openfang/** rw,
+
+    # Networking — HTTPS to LLM APIs
+    network inet  tcp,
+    network inet6 tcp,
+    network inet  udp,
+
+    # System info (read-only)
+    /proc/cpuinfo r,
+    /proc/meminfo r,
+    /proc/loadavg r,
+    /proc/uptime  r,
+    /proc/net/    r,
+    /proc/net/**  r,
+
+    # DNS
+    /etc/resolv.conf r,
+    /etc/hosts       r,
+    /etc/nsswitch.conf r,
+
+    # Certificates
+    /etc/ssl/certs/ r,
+    /etc/ssl/certs/** r,
+
+    # Deny dangerous operations
+    deny /etc/passwd w,
+    deny /etc/shadow rw,
+    deny /etc/sudoers rw,
+    deny /proc/sys/** w,
+    deny /sys/** w,
+
+    # Agent subprocess spawning (restricted)
+    /usr/bin/sh   rix,
+    /usr/bin/bash rix,
+    /bin/sh       rix,
+
+    # Signal handling
+    signal receive set=(term, kill, hup),
+}

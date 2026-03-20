@@ -1,0 +1,96 @@
+# OpenFang OS — System Monitor Agent
+# Monitors CPU, memory, disk, and network. Alerts on anomalies.
+
+[agent]
+name        = "system-monitor"
+description = "Monitors system resources and sends alerts on anomalies"
+version     = "0.1.0"
+enabled     = true
+
+# How often to run (cron syntax)
+schedule    = "* * * * *"     # Every minute
+
+# Alternatively, set interval in seconds:
+# interval = 60
+
+[llm]
+model       = "gpt-4o-mini"   # Use a fast/cheap model for monitoring
+max_tokens  = 256
+temperature = 0.0             # Deterministic for analysis
+
+system_prompt = """
+You are a Linux system monitoring agent running on OpenFang OS.
+Your job is to analyze system metrics and determine if any action is needed.
+Respond in JSON with this structure:
+{
+  "status": "ok" | "warning" | "critical",
+  "summary": "one-line summary",
+  "alerts": ["alert message 1", ...],
+  "actions": ["recommended action 1", ...]
+}
+Be concise. Only flag real problems.
+"""
+
+# ─── Thresholds ───────────────────────────────────────────────────────────────
+
+[thresholds]
+# Alert when CPU usage exceeds this percentage
+cpu_percent_warn     = 80
+cpu_percent_crit     = 95
+
+# Alert when memory usage exceeds these
+mem_percent_warn     = 85
+mem_percent_crit     = 95
+
+# Alert when disk usage exceeds these
+disk_percent_warn    = 80
+disk_percent_crit    = 90
+
+# Alert when load average (1min) exceeds CPU count * multiplier
+load_multiplier_warn = 2.0
+load_multiplier_crit = 4.0
+
+# Alert on high network error rate (errors/sec)
+net_errors_warn      = 10
+
+# ─── Metrics collection ───────────────────────────────────────────────────────
+
+[metrics]
+# Which metrics to collect
+cpu     = true
+memory  = true
+disk    = true
+network = true
+processes = true
+
+# Top N processes to include
+top_processes = 5
+
+# Disk paths to monitor
+disk_paths = ["/", "/data", "/boot"]
+
+# Network interfaces to monitor
+net_interfaces = ["eth0", "lo"]
+
+# ─── Alerting ─────────────────────────────────────────────────────────────────
+
+[alerts]
+# Where to send alerts
+# Leave empty to only log
+email   = ""
+webhook = ""
+
+# Only alert once per this many minutes (avoid spam)
+cooldown_minutes = 15
+
+# Log alerts to
+log_file = "/var/log/openfang/agents/system-monitor.log"
+
+# ─── Actions ──────────────────────────────────────────────────────────────────
+
+[actions]
+# Automatically clear disk if critically full
+auto_clean_disk = false
+
+# Auto-restart services if they die
+auto_restart_services = ["openfang", "sshd"]

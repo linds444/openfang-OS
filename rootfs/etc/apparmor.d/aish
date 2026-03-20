@@ -1,0 +1,46 @@
+# OpenFang OS — AppArmor profile for aish (AI Shell)
+
+#include <tunables/global>
+
+/usr/bin/aish {
+    #include <abstractions/base>
+    #include <abstractions/bash>
+    #include <abstractions/nameservice>
+    #include <abstractions/openssl>
+    #include <abstractions/ssl_certs>
+
+    # Binary
+    /usr/bin/aish mr,
+
+    # Full shell access (aish runs commands on behalf of the user)
+    # Commands are confirmed by the user before execution
+    /usr/bin/**   Pixr,
+    /usr/sbin/**  Pixr,
+    /bin/**       Pixr,
+    /sbin/**      Pixr,
+
+    # Home directory access
+    owner @{HOME}/          rw,
+    owner @{HOME}/**        rw,
+
+    # OpenFang config (read-only from aish)
+    /etc/openfang/config.toml r,
+
+    # History and config files
+    owner @{HOME}/.aish_history  rw,
+    owner @{HOME}/.aish_config   rw,
+
+    # System info
+    /proc/cpuinfo r,
+    /proc/meminfo r,
+    /proc/uptime  r,
+
+    # Networking for LLM API calls
+    network inet  tcp,
+    network inet6 tcp,
+
+    # Deny privilege escalation tools directly from aish
+    # (user must drop to bash and use sudo explicitly)
+    deny /usr/bin/sudo x,
+    deny /usr/bin/su   x,
+}

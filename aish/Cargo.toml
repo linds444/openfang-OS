@@ -1,0 +1,55 @@
+[package]
+name        = "aish"
+version     = "0.1.0"
+edition     = "2021"
+description = "aish — AI Shell for OpenFang OS"
+authors     = ["OpenFang OS Project"]
+license     = "MIT"
+
+[[bin]]
+name = "aish"
+path = "src/main.rs"
+
+[dependencies]
+# Async runtime
+tokio       = { version = "1", features = ["full"] }
+
+# HTTP client for LLM API calls
+reqwest     = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
+
+# Serialization
+serde       = { version = "1", features = ["derive"] }
+serde_json  = "1"
+
+# TOML config parsing
+toml        = "0.8"
+
+# Terminal UI and line editing
+rustyline   = { version = "14", features = ["with-file-history", "derive"] }
+crossterm   = "0.27"
+
+# Colored output
+colored     = "2"
+
+# Error handling
+anyhow      = "1"
+thiserror   = "1"
+
+# Shell execution
+nix         = { version = "0.28", features = ["process", "signal"] }
+
+# Regex for destructive command detection
+regex       = "1"
+
+# Dirs for home directory
+dirs        = "5"
+
+# Logging
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+[profile.release]
+opt-level = 3
+lto       = true
+codegen-units = 1
+strip     = true

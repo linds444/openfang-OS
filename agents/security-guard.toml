@@ -1,0 +1,113 @@
+# OpenFang OS — Security Guard Agent
+# Scans logs for intrusion attempts, monitors file integrity, checks for CVEs.
+
+[agent]
+name        = "security-guard"
+description = "Monitors security events, detects intrusions, checks for vulnerabilities"
+version     = "0.1.0"
+enabled     = true
+
+schedule    = "*/5 * * * *"   # Every 5 minutes
+
+[llm]
+model       = "gpt-4o-mini"
+max_tokens  = 512
+temperature = 0.0
+
+system_prompt = """
+You are a Linux security monitoring agent on OpenFang OS.
+Analyze the provided security events and determine:
+1. Whether any events indicate a real security threat
+2. What the threat level is (none/low/medium/high/critical)
+3. What immediate actions should be taken
+
+Respond in JSON:
+{
+  "threat_level": "none" | "low" | "medium" | "high" | "critical",
+  "events": [
+    {"type": "ssh_brute_force", "source_ip": "1.2.3.4", "attempts": 50}
+  ],
+  "summary": "one-line summary",
+  "recommended_actions": ["block IP 1.2.3.4", ...]
+}
+
+Focus on real threats. Ignore routine noise.
+"""
+
+# ─── Intrusion Detection ──────────────────────────────────────────────────────
+
+[intrusion_detection]
+# Scan these log files for security events
+log_files = [
+    "/var/log/auth.log",
+    "/var/log/syslog",
+    "/var/log/openfang/openfang.log",
+    "/var/log/nginx/access.log",
+]
+
+# SSH brute force: block IP after this many failures in the window
+ssh_fail_threshold    = 10
+ssh_fail_window_secs  = 300    # 5 minutes
+
+# Auto-ban with nftables
+auto_ban_enabled      = true
+auto_ban_duration     = "24h"  # How long to ban an IP
+auto_ban_log_file     = "/var/log/openfang/agents/security-guard-bans.log"
+
+# ─── File Integrity Monitoring ────────────────────────────────────────────────
+
+[file_integrity]
+enabled = true
+
+# Files to monitor for changes
+watch_paths = [
+    "/etc/passwd",
+    "/etc/shadow",
+    "/etc/sudoers",
+    "/etc/ssh/sshd_config",
+    "/etc/openfang/config.toml",
+    "/usr/bin/aish",
+    "/usr/bin/openfang",
+    "/usr/bin/openfang-ctl",
+]
+
+# Store baseline hashes here
+baseline_file = "/var/lib/openfang/security/file-baseline.sha256"
+
+# ─── CVE Scanning ─────────────────────────────────────────────────────────────
+
+[cve_scanning]
+enabled  = true
+# Check once per day
+schedule = "0 3 * * *"
+
+# CVE database source
+database_url = "https://nvd.nist.gov/feeds/json/cve/1.1/nvdcve-1.1-recent.json.gz"
+
+# ─── Network Scanning ─────────────────────────────────────────────────────────
+
+[network_scanning]
+enabled = true
+
+# Alert on unexpected open ports
+expected_open_ports = [22, 8080]
+alert_on_unexpected = true
+
+# ─── Alerting ─────────────────────────────────────────────────────────────────
+
+[alerts]
+email     = ""
+webhook   = ""
+log_file  = "/var/log/openfang/agents/security-guard.log"
+
+# Always alert on these threat levels
+always_alert_on = ["high", "critical"]
+
+# ─── Actions ──────────────────────────────────────────────────────────────────
+
+[actions]
+# Automatically block IPs that trigger SSH brute force
+auto_block_ssh_bruteforce = true
+
+# Alert and pause (don't auto-remediate) on file integrity changes
+auto_remediate_file_changes = false

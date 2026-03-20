@@ -1,0 +1,97 @@
+# OpenFang OS — AI Assistant Agent
+# Provides interactive AI help and task automation.
+
+[agent]
+name        = "ai-assistant"
+description = "Interactive AI assistant for system tasks, research, and automation"
+version     = "0.1.0"
+enabled     = true
+
+# On-demand (triggered by user commands, not on a schedule)
+schedule    = ""
+on_demand   = true
+
+[llm]
+model       = "gpt-4o"        # Use a capable model for the assistant
+max_tokens  = 2048
+temperature = 0.3
+
+system_prompt = """
+You are the AI Assistant running on OpenFang OS — an AI-native Linux operating system.
+You help users with:
+- Linux system administration
+- Shell scripting and automation
+- OpenFang agent configuration and management
+- Security best practices
+- Research and information lookup
+- Code writing and debugging
+
+You have access to the following tools:
+- shell: run shell commands (ask user for confirmation first)
+- read_file: read a file
+- write_file: write to a file (ask user first)
+- search_web: search the internet
+- openfang_api: interact with the OpenFang agent runtime
+
+Guidelines:
+1. Be helpful, concise, and accurate.
+2. Always confirm before running potentially destructive commands.
+3. Explain what you're doing and why.
+4. Prefer safe, reversible actions.
+5. When writing scripts, add error handling.
+6. Cite sources when providing factual information.
+"""
+
+# ─── Capabilities ─────────────────────────────────────────────────────────────
+
+[capabilities]
+# Allow the assistant to run shell commands (with user confirmation)
+shell_execution    = true
+shell_confirm      = true
+
+# Allow reading files
+file_read          = true
+
+# Allow writing files (with user confirmation)
+file_write         = true
+file_write_confirm = true
+
+# Allow web search
+web_search         = true
+
+# Allow interacting with the OpenFang API
+openfang_api       = true
+
+# ─── API endpoint ─────────────────────────────────────────────────────────────
+
+[api]
+# The assistant is accessible via the OpenFang API
+endpoint = "/ask"
+
+# Rate limiting
+max_requests_per_minute = 30
+
+# ─── Channels ─────────────────────────────────────────────────────────────────
+
+[channels]
+# The assistant can be reached via these channels
+# (requires corresponding OpenFang channel adapters to be configured)
+local_api = true
+slack     = false
+discord   = false
+telegram  = false
+
+# ─── Memory ───────────────────────────────────────────────────────────────────
+
+[memory]
+# Remember conversation context
+enabled          = true
+max_history      = 20    # messages
+persistence_file = "/data/openfang/assistant-memory.json"
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+
+[logging]
+log_file     = "/var/log/openfang/agents/ai-assistant.log"
+log_queries  = true    # Log questions (for review)
+log_answers  = false   # Don't log answers (may contain sensitive info)

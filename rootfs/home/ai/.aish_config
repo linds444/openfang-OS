@@ -1,0 +1,23 @@
+# aish — AI Shell user configuration
+# Place in ~/.aish_config
+
+[ui]
+prompt_color = "cyan"
+show_ai_indicator = true
+history_size = 10000
+
+[llm]
+# Override global LLM settings for this user (optional)
+# model = "gpt-4o"
+# max_tokens = 1024
+
+[behavior]
+# Auto-run safe commands without confirmation
+# (still confirms destructive ones)
+auto_run_safe = false
+
+# Show timing info after commands
+show_timing = true
+
+# Inline suggestions (show AI suggestion before accepting)
+inline_suggest = true

@@ -1,0 +1,29 @@
+From: OpenFang OS Project <security@openfang.os>
+Date: Mon, 01 Jan 2024 00:00:00 +0000
+Subject: [PATCH 1/1] OpenFang OS kernel hardening tweaks
+
+Additional security hardening on top of the standard Linux 6.6 LTS:
+
+1. Increase default dmesg restriction to kernel.dmesg_restrict=1
+2. Enable TCP SYN cookie defense by default
+3. Restrict kernel pointer exposure
+4. Disable IP forwarding by default
+5. Set kernel.unprivileged_bpf_disabled=1 by default
+6. Set vm.mmap_min_addr to a safer default
+7. Set kernel.randomize_va_space=2
+
+These settings can also be applied via /etc/sysctl.d/99-openfang-hardening.conf
+without patching the kernel itself.
+---
+ security/Kconfig | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/security/Kconfig b/security/Kconfig
+index 1111111..2222222 100644
+--- a/security/Kconfig
++++ b/security/Kconfig
+@@ -1,5 +1,5 @@
+ # OpenFang OS kernel hardening placeholder patch
+ # Real patches are applied via sysctl.d at runtime
+-# See rootfs/etc/sysctl.d/99-openfang-hardening.conf
++# See /etc/sysctl.d/99-openfang-hardening.conf

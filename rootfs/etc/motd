@@ -1,0 +1,18 @@
+
+  ██████╗ ██████╗ ███████╗███╗   ██╗███████╗ █████╗ ███╗   ██╗ ██████╗      ██████╗ ███████╗
+ ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔══██╗████╗  ██║██╔════╝     ██╔═══██╗██╔════╝
+ ██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗  ███████║██╔██╗ ██║██║  ███╗    ██║   ██║███████╗
+ ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══╝  ██╔══██║██║╚██╗██║██║   ██║    ██║   ██║╚════██║
+ ╚██████╔╝██║     ███████╗██║ ╚████║██║     ██║  ██║██║ ╚████║╚██████╔╝    ╚██████╔╝███████║
+  ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝      ╚═════╝ ╚══════╝
+
+  AI-Native Linux OS  ·  Built on OpenFang Agent Runtime  ·  Kernel 6.6 LTS
+
+  Quick start:
+    openfang-ctl status          — System & agent status
+    openfang-ctl agents list     — List running agents
+    openfang-ctl config edit     — Edit configuration
+    help                         — AI-powered help (type anything)
+
+  Type natural language commands directly — aish understands you.
+

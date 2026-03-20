@@ -1,0 +1,116 @@
+# OpenFang OS — Configuration Template
+# Copy to openfang.toml and fill in your values.
+# This file is NEVER committed (it contains secrets).
+
+[system]
+hostname = "openfang"
+timezone = "UTC"
+locale   = "en_US.UTF-8"
+
+# Default user created on first boot
+[user]
+name     = "ai"
+shell    = "/usr/bin/aish"
+ssh_keys = []  # Add your public SSH keys here
+
+# ─── LLM Provider ─────────────────────────────────────────────────────────────
+# OpenFang supports 27 LLM providers. Set one below.
+# Options: openai, anthropic, ollama, openrouter, groq, mistral, cohere, ...
+
+[llm]
+provider = "openai"          # LLM provider name
+api_key  = "sk-..."          # API key (leave empty for Ollama)
+base_url = ""                # Override API base URL (e.g. http://localhost:11434 for Ollama)
+model    = "gpt-4o"          # Default model
+timeout  = 30                # Request timeout in seconds
+
+# Anthropic / Claude example:
+# provider = "anthropic"
+# api_key  = "sk-ant-..."
+# model    = "claude-opus-4-6"
+
+# Local Ollama example:
+# provider = "ollama"
+# base_url = "http://localhost:11434"
+# model    = "llama3.2"
+# api_key  = ""
+
+# ─── AI Shell (aish) ──────────────────────────────────────────────────────────
+[aish]
+# Require confirmation before running AI-generated commands
+confirm_before_run   = true
+# Confirm destructive commands even if typed directly
+confirm_destructive  = true
+# Show the generated command before running
+show_generated_cmd   = true
+# Maximum tokens for command generation
+max_tokens           = 512
+# System prompt override (leave empty for default)
+system_prompt        = ""
+
+# ─── Agent Runtime ────────────────────────────────────────────────────────────
+[agents]
+enabled    = true
+config_dir = "/etc/openfang/agents"
+log_dir    = "/var/log/openfang/agents"
+
+# OpenFang runtime API
+[agents.api]
+host = "127.0.0.1"
+port = 8080
+auth_token = ""  # Generate with: openfang-ctl generate-token
+
+# ─── Built-in Agents ──────────────────────────────────────────────────────────
+[agents.system_monitor]
+enabled  = true
+interval = 60   # seconds
+
+[agents.security_guard]
+enabled  = true
+interval = 300  # 5 minutes
+alert_email = ""  # Send alerts here (optional)
+
+[agents.ai_assistant]
+enabled = true
+# The assistant listens for commands via the OpenFang API
+
+# ─── Security ─────────────────────────────────────────────────────────────────
+[security]
+# Enable AppArmor for agent sandboxing
+apparmor = true
+
+# Firewall: allow-list of ports (SSH and OpenFang API are always allowed)
+firewall_allow_ports = [22, 8080]
+
+# Auto-apply security updates
+auto_update = true
+
+# Require SSH key auth (no passwords)
+ssh_key_only = true
+
+# ─── Networking ───────────────────────────────────────────────────────────────
+[network]
+interface = "eth0"
+dhcp      = true
+
+# Static IP (used only if dhcp = false)
+[network.static]
+address  = "192.168.1.100/24"
+gateway  = "192.168.1.1"
+dns      = ["1.1.1.1", "8.8.8.8"]
+
+# ─── Storage ──────────────────────────────────────────────────────────────────
+[storage]
+# Encrypt root partition with LUKS2
+encrypt_root   = true
+# Read-only root with tmpfs overlay
+readonly_root  = true
+# Persistent data partition mount point
+data_mount     = "/data"
+
+# ─── Logging ──────────────────────────────────────────────────────────────────
+[logging]
+level     = "info"   # trace, debug, info, warn, error
+log_dir   = "/var/log/openfang"
+max_size  = "100MB"
+max_files = 10

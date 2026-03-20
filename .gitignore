@@ -1,0 +1,47 @@
+# Build outputs
+build/output/
+build/work/
+*.iso
+*.img
+*.tar.gz
+*.tar.xz
+*.tar.bz2
+
+# Rust build artifacts
+target/
+Cargo.lock
+
+# Kernel build
+kernel/linux-*/
+kernel/build/
+
+# Environment and secrets
+.env
+*.env
+openfang.toml
+config.toml
+
+# Editor artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS artifacts
+rootfs/proc/
+rootfs/sys/
+rootfs/dev/
+
+# Logs
+*.log
+logs/
+
+# Docker volumes
+.docker/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
