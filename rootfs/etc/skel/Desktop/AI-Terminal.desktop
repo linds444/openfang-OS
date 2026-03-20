@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AI Terminal
+Comment=Terminal with AI-powered natural language commands
+Icon=utilities-terminal
+Exec=xfce4-terminal --title="AI Shell (aish)" -x aish
+Terminal=false

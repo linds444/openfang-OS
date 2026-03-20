@@ -1,66 +1,64 @@
-# OpenFang OS — Build Container
-# Provides a reproducible Alpine-based build environment
+# OpenFang OS — Build Container (Ubuntu 24.04 LTS)
+# Produces a full desktop Linux ISO with AI-native features
 
-ARG ALPINE_VER=3.19
-FROM alpine:${ALPINE_VER} AS builder
+ARG UBUNTU_VER=24.04
+FROM ubuntu:${UBUNTU_VER} AS builder
 
 ARG VERSION=0.1.0
-ARG ARCH=x86_64
+ARG ARCH=amd64
 
 LABEL org.opencontainers.image.title="OpenFang OS Builder"
 LABEL org.opencontainers.image.version="${VERSION}"
-LABEL org.opencontainers.image.description="Build environment for OpenFang OS"
+LABEL org.opencontainers.image.description="Build environment for OpenFang OS (Ubuntu 24.04 base)"
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
 
 # Install build tools
-RUN apk add --no-cache \
-    # Core build tools
-    alpine-sdk \
-    build-base \
-    abuild \
-    # Kernel build deps
-    linux-headers \
-    openssl-dev \
-    flex \
-    bison \
-    elfutils-dev \
-    # ISO/image creation
-    grub \
-    grub-efi \
-    xorriso \
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Debootstrap (creates Ubuntu rootfs from scratch)
+    debootstrap \
+    # Squashfs
     squashfs-tools \
+    # ISO creation
+    xorriso \
+    isolinux \
+    syslinux-common \
+    grub-pc-bin \
+    grub-efi-amd64-bin \
+    grub2-common \
     mtools \
     dosfstools \
-    # Network & crypto
-    curl \
-    wget \
-    openssl \
-    # Filesystems
+    # Disk tools
+    gdisk \
+    parted \
+    # Encryption
+    cryptsetup-bin \
+    # Filesystem
     e2fsprogs \
-    btrfs-progs \
-    cryptsetup \
-    # Compression
-    zstd \
-    xz \
-    gzip \
-    # AppArmor
-    apparmor \
-    apparmor-utils \
-    # Rust (for aish and openfang-ctl)
-    rust \
-    cargo \
-    # Misc
-    bash \
+    # Kernel and initramfs
+    linux-image-generic \
+    initramfs-tools \
+    # Build utils
+    wget \
+    curl \
     git \
+    rsync \
     jq \
-    python3 \
-    py3-pip
+    pigz \
+    zstd \
+    xz-utils \
+    # Rust (for aish + openfang-ctl)
+    rustup \
+    # System
+    bash \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Alpine mkimage tooling
-RUN apk add --no-cache \
-    alpine-conf \
-    alpine-base
+# Install Rust stable
+RUN rustup toolchain install stable 2>/dev/null || true
 
-# Copy build scripts into the container
+# Copy build scripts
 COPY scripts/ /scripts/
 RUN chmod +x /scripts/*.sh
 

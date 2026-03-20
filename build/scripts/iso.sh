@@ -1,160 +1,203 @@
 #!/bin/bash
-# OpenFang OS — ISO Image Builder
-# Creates a bootable hybrid ISO (BIOS + UEFI)
+# OpenFang OS — Ubuntu 24.04 ISO Builder
+# Creates a hybrid live ISO (BIOS + UEFI) with casper live-boot
 
 set -euo pipefail
 
 VERSION="${VERSION:-0.1.0}"
-ARCH="${ARCH:-x86_64}"
+ARCH="${ARCH:-amd64}"
 ISO_NAME="${ISO_NAME:-openfang-os-${VERSION}-${ARCH}.iso}"
 WORK_DIR="/build/work"
 OUTPUT_DIR="/output"
+ROOTFS="${WORK_DIR}/rootfs"
 ISO_WORK="${WORK_DIR}/iso"
 
-log() { echo "[iso] $*"; }
-die() { echo "ERROR: $*" >&2; exit 1; }
+log()     { echo "[iso] $*"; }
+section() { echo; echo "── $* ──"; }
+die()     { echo "ERROR: $*" >&2; exit 1; }
 
-log "Building ISO: ${ISO_NAME}"
+log "=== Building OpenFang OS ISO: ${ISO_NAME} ==="
 
-# Run the main build first
+# Run main build first
 bash /scripts/build.sh
 
-# ─── Create ISO tree ──────────────────────────────────────────────────────────
-mkdir -p "${ISO_WORK}/boot/grub"
-mkdir -p "${ISO_WORK}/EFI/BOOT"
-mkdir -p "${ISO_WORK}/isolinux"
+# ─── Prepare ISO structure ────────────────────────────────────────────────────
+section "Preparing ISO directory structure"
+mkdir -p \
+    "${ISO_WORK}/casper" \
+    "${ISO_WORK}/boot/grub" \
+    "${ISO_WORK}/EFI/BOOT" \
+    "${ISO_WORK}/.disk"
 
-# ─── Create squashfs root filesystem ─────────────────────────────────────────
-log "Creating squashfs..."
-mksquashfs "${WORK_DIR}/rootfs" "${ISO_WORK}/openfang.squashfs" \
+# ─── Copy kernel and initramfs ────────────────────────────────────────────────
+section "Copying kernel and initramfs"
+
+KERNEL=$(ls "${ROOTFS}/boot/vmlinuz-"* 2>/dev/null | sort -V | tail -1)
+INITRD=$(ls "${ROOTFS}/boot/initrd.img-"* 2>/dev/null | sort -V | tail -1)
+
+[ -f "${KERNEL}" ] || die "Kernel not found in ${ROOTFS}/boot/"
+[ -f "${INITRD}" ] || die "Initrd not found in ${ROOTFS}/boot/"
+
+KERNEL_VER=$(basename "${KERNEL}" | sed 's/vmlinuz-//')
+log "Kernel: ${KERNEL_VER}"
+
+cp "${KERNEL}" "${ISO_WORK}/casper/vmlinuz"
+cp "${INITRD}" "${ISO_WORK}/casper/initrd"
+
+# ─── Create squashfs ──────────────────────────────────────────────────────────
+section "Creating squashfs filesystem"
+log "This may take several minutes..."
+
+mksquashfs "${ROOTFS}" "${ISO_WORK}/casper/filesystem.squashfs" \
     -comp zstd -Xcompression-level 19 \
     -noappend \
     -wildcards \
-    -e "proc/*" -e "sys/*" -e "dev/*" -e "tmp/*" -e "run/*"
+    -e "boot/*" \
+    -e "proc/*" \
+    -e "sys/*" \
+    -e "dev/*" \
+    -e "tmp/*" \
+    -e "run/*" \
+    -e "var/cache/apt/*" \
+    -e "var/lib/apt/lists/*"
 
-# ─── Copy kernel and initramfs ────────────────────────────────────────────────
-KERNEL=$(ls "${WORK_DIR}/rootfs/boot/vmlinuz-"* 2>/dev/null | head -1)
-INITRD=$(ls "${WORK_DIR}/rootfs/boot/initramfs-"* 2>/dev/null | head -1)
+printf $(du -sx --block-size=1 "${ROOTFS}" | cut -f1) \
+    > "${ISO_WORK}/casper/filesystem.size"
 
-if [ -z "${KERNEL}" ]; then
-    # Fall back to Alpine's kernel from the build container
-    KERNEL="/boot/vmlinuz-lts"
-    INITRD="/boot/initramfs-lts"
-fi
+log "Squashfs: $(du -sh ${ISO_WORK}/casper/filesystem.squashfs | cut -f1)"
 
-[ -f "${KERNEL}" ] || die "Kernel not found: ${KERNEL}"
-[ -f "${INITRD}" ] || die "Initramfs not found: ${INITRD}"
+# ─── Disk metadata ────────────────────────────────────────────────────────────
+echo "OpenFang OS ${VERSION}" > "${ISO_WORK}/.disk/info"
+echo "http://github.com/RightNow-AI/openfang-OS" > "${ISO_WORK}/.disk/release_notes_url"
+touch "${ISO_WORK}/.disk/base_installable"
 
-cp "${KERNEL}" "${ISO_WORK}/boot/vmlinuz"
-cp "${INITRD}" "${ISO_WORK}/boot/initramfs"
+# ─── MD5 manifest ────────────────────────────────────────────────────────────
+section "Generating filesystem manifest"
+chroot "${ROOTFS}" dpkg-query -W --showformat='${Package} ${Version}\n' \
+    > "${ISO_WORK}/casper/filesystem.manifest"
 
 # ─── GRUB configuration ──────────────────────────────────────────────────────
-log "Writing GRUB config..."
-cat > "${ISO_WORK}/boot/grub/grub.cfg" << 'GRUB'
+section "Writing GRUB configuration"
+
+KERNEL_PARAMS="boot=casper quiet splash apparmor=1 security=apparmor mitigations=auto kaslr"
+
+cat > "${ISO_WORK}/boot/grub/grub.cfg" << GRUB
+# OpenFang OS — GRUB Boot Menu
+# Ubuntu 24.04 LTS base
+
 set default=0
-set timeout=5
+set timeout=10
 set timeout_style=menu
 
-# OpenFang OS color theme
+insmod all_video
+insmod gfxterm
+insmod png
+
+# Colors
 set color_normal=white/black
-set color_highlight=black/light-cyan
+set color_highlight=black/cyan
 
-menuentry "OpenFang OS" {
-    linux  /boot/vmlinuz \
-        root=/dev/ram0 \
-        init=/sbin/init \
-        modules=loop,squashfs,sd-mod,usb-storage \
-        quiet \
-        loglevel=3 \
-        apparmor=1 security=apparmor \
-        mitigations=auto \
-        kaslr \
-        page_alloc.shuffle=1 \
-        init_on_alloc=1 \
-        init_on_free=1
-    initrd /boot/initramfs
+if background_image /boot/grub/splash.png; then true; fi
+
+menuentry "OpenFang OS ${VERSION} (Live)" --class openfang --class ubuntu --class os {
+    set gfxpayload=keep
+    linux  /casper/vmlinuz ${KERNEL_PARAMS}
+    initrd /casper/initrd
 }
 
-menuentry "OpenFang OS (verbose)" {
-    linux  /boot/vmlinuz \
-        root=/dev/ram0 \
-        init=/sbin/init \
-        modules=loop,squashfs,sd-mod,usb-storage \
-        apparmor=1 security=apparmor
-    initrd /boot/initramfs
+menuentry "OpenFang OS ${VERSION} (Live, safe graphics)" --class openfang {
+    set gfxpayload=keep
+    linux  /casper/vmlinuz ${KERNEL_PARAMS} nomodeset
+    initrd /casper/initrd
 }
 
-menuentry "Install OpenFang OS to disk" {
-    linux  /boot/vmlinuz \
-        root=/dev/ram0 \
-        init=/sbin/init \
-        modules=loop,squashfs,sd-mod,usb-storage \
-        openfang.install=1
-    initrd /boot/initramfs
+menuentry "Install OpenFang OS to disk" --class openfang {
+    set gfxpayload=keep
+    linux  /casper/vmlinuz ${KERNEL_PARAMS} openfang.install=1 automatic-ubiquity
+    initrd /casper/initrd
 }
 
-menuentry "Memory test (memtest86+)" {
-    linux /boot/memtest
+menuentry "Check disk for defects" --class openfang {
+    linux  /casper/vmlinuz ${KERNEL_PARAMS} integrity-check
+    initrd /casper/initrd
+}
+
+menuentry "Boot from first hard disk" --class hdd {
+    set root=(hd0)
+    chainloader +1
+}
+
+menuentry "UEFI Firmware Settings" {
+    fwsetup
 }
 GRUB
 
-# ─── UEFI GRUB image ─────────────────────────────────────────────────────────
-log "Building GRUB EFI image..."
+# Copy splash if it exists
+if [ -f "/rootfs/usr/share/openfang/splash.png" ]; then
+    cp /rootfs/usr/share/openfang/splash.png "${ISO_WORK}/boot/grub/"
+fi
+
+# ─── Build GRUB EFI image ────────────────────────────────────────────────────
+section "Building GRUB EFI image"
+
 grub-mkstandalone \
     --format=x86_64-efi \
     --output="${ISO_WORK}/EFI/BOOT/BOOTX64.EFI" \
     --locales="" \
-    --fonts="" \
+    --fonts="unicode" \
     "boot/grub/grub.cfg=${ISO_WORK}/boot/grub/grub.cfg"
 
-# Create EFI boot disk image
-dd if=/dev/zero of="${ISO_WORK}/boot/efi.img" bs=1M count=4
-mkfs.vfat "${ISO_WORK}/boot/efi.img"
+# EFI boot partition image (for ISO)
+dd if=/dev/zero of="${ISO_WORK}/boot/efi.img" bs=1M count=10
+mkfs.vfat -n "OPENFANG_EFI" "${ISO_WORK}/boot/efi.img"
 mmd -i "${ISO_WORK}/boot/efi.img" ::EFI ::EFI/BOOT
 mcopy -i "${ISO_WORK}/boot/efi.img" \
     "${ISO_WORK}/EFI/BOOT/BOOTX64.EFI" ::EFI/BOOT/
 
-# ─── BIOS GRUB ───────────────────────────────────────────────────────────────
-log "Installing BIOS GRUB..."
+# ─── Build BIOS GRUB image ───────────────────────────────────────────────────
+section "Building BIOS GRUB image"
+
 grub-mkstandalone \
     --format=i386-pc \
-    --output="${ISO_WORK}/isolinux/core.img" \
-    --install-modules="linux normal iso9660 biosdisk memdisk search tar ls" \
+    --output="${ISO_WORK}/boot/grub/core.img" \
+    --install-modules="linux normal iso9660 biosdisk memdisk search tar ls all_video gfxterm png" \
     --modules="linux normal iso9660 biosdisk search" \
     --locales="" \
-    --fonts="" \
     "boot/grub/grub.cfg=${ISO_WORK}/boot/grub/grub.cfg"
 
 cat /usr/lib/grub/i386-pc/cdboot.img \
-    "${ISO_WORK}/isolinux/core.img" \
-    > "${ISO_WORK}/isolinux/bios.img"
+    "${ISO_WORK}/boot/grub/core.img" \
+    > "${ISO_WORK}/boot/grub/bios.img"
 
 # ─── Create ISO ───────────────────────────────────────────────────────────────
-log "Creating ISO..."
+section "Creating hybrid ISO"
+
 xorriso -as mkisofs \
     -iso-level 3 \
     -full-iso9660-filenames \
     -volid "OPENFANG_OS" \
-    -preparer "OpenFang OS Build System" \
+    -volset "OpenFang OS ${VERSION}" \
+    -preparer "OpenFang OS Build" \
     -publisher "OpenFang OS Project" \
-    -appid "OpenFang OS ${VERSION}" \
     -output "${OUTPUT_DIR}/${ISO_NAME}" \
-    -eltorito-boot isolinux/bios.img \
-    -no-emul-boot \
-    -boot-load-size 4 \
-    -boot-info-table \
-    --eltorito-catalog isolinux/boot.cat \
-    --grub2-boot-info \
-    --grub2-mbr /usr/lib/grub/i386-pc/boot_hybrid.img \
+    -eltorito-boot boot/grub/bios.img \
+        -no-emul-boot \
+        -boot-load-size 4 \
+        -boot-info-table \
+        --eltorito-catalog boot/grub/boot.cat \
+        --grub2-boot-info \
+        --grub2-mbr /usr/lib/grub/i386-pc/boot_hybrid.img \
     -eltorito-alt-boot \
-    -e boot/efi.img \
-    -no-emul-boot \
+        -e boot/efi.img \
+        -no-emul-boot \
     -append_partition 2 0xef "${ISO_WORK}/boot/efi.img" \
     -graft-points \
         "${ISO_WORK}" \
         /boot/grub/grub.cfg="${ISO_WORK}/boot/grub/grub.cfg"
 
-log "ISO created: ${OUTPUT_DIR}/${ISO_NAME}"
+section "ISO complete"
+log "Output: ${OUTPUT_DIR}/${ISO_NAME}"
 ls -lh "${OUTPUT_DIR}/${ISO_NAME}"
+echo
 sha256sum "${OUTPUT_DIR}/${ISO_NAME}" | tee "${OUTPUT_DIR}/${ISO_NAME}.sha256"
 log "Done!"

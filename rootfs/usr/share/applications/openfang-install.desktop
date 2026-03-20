@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Install OpenFang OS
+GenericName=OS Installer
+Comment=Install OpenFang OS to your hard disk
+Icon=system-software-install
+Exec=xfce4-terminal --title="OpenFang OS Installer" -x bash -c "sudo /usr/lib/openfang/install.sh; read -p 'Press Enter to close...'"
+Terminal=false
+StartupNotify=true
+Categories=System;
+Keywords=install;setup;disk;

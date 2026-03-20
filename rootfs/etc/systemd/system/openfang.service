@@ -1,0 +1,49 @@
+[Unit]
+Description=OpenFang AI Agent Runtime
+Documentation=https://github.com/RightNow-AI/openfang
+After=network-online.target apparmor.service
+Wants=network-online.target
+Requires=dbus.service
+
+[Service]
+Type=notify
+User=openfang
+Group=openfang
+EnvironmentFile=-/etc/openfang/environment
+ExecStartPre=/usr/lib/openfang/pre-start.sh
+ExecStart=/usr/bin/openfang --config /etc/openfang/config.toml
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=on-failure
+RestartSec=5s
+TimeoutStartSec=60
+TimeoutStopSec=30
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openfang
+
+# Security sandboxing
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/var/log/openfang /data/openfang /run/openfang /var/lib/openfang
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictRealtime=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+
+# Resource limits
+MemoryMax=2G
+CPUQuota=200%
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

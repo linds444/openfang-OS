@@ -1,0 +1,14 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AI Terminal (aish)
+GenericName=AI Shell
+Comment=AI-powered terminal — understands natural language
+Icon=utilities-terminal
+Exec=xfce4-terminal --title="AI Shell" -x aish
+Terminal=false
+StartupNotify=true
+Categories=System;TerminalEmulator;AI;
+Keywords=terminal;shell;ai;aish;openfang;
+MimeType=
+X-XFCE-Source=file:///usr/share/applications/aish.desktop

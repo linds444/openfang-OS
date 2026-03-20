@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=OpenFang Control
+GenericName=AI System Control
+Comment=Manage the OpenFang AI agent runtime
+Icon=preferences-system
+Exec=xfce4-terminal --title="OpenFang Control" -x bash -c "openfang-ctl status; echo; read -p 'Press Enter to open full control...'; exec bash"
+Terminal=false
+StartupNotify=true
+Categories=System;Settings;AI;
+Keywords=openfang;ai;agents;system;control;

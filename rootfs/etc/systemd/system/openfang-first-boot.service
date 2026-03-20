@@ -1,0 +1,17 @@
+[Unit]
+Description=OpenFang OS First Boot Setup
+After=network-online.target
+Before=lightdm.service
+ConditionPathExists=!/var/lib/openfang/.first-boot-done
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/lib/openfang/first-boot.sh
+ExecStartPost=/bin/touch /var/lib/openfang/.first-boot-done
+
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target

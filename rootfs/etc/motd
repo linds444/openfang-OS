@@ -6,13 +6,14 @@
  ╚██████╔╝██║     ███████╗██║ ╚████║██║     ██║  ██║██║ ╚████║╚██████╔╝    ╚██████╔╝███████║
   ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝      ╚═════╝ ╚══════╝
 
-  AI-Native Linux OS  ·  Built on OpenFang Agent Runtime  ·  Kernel 6.6 LTS
+  AI-Native Linux OS  ·  Ubuntu 24.04 LTS  ·  XFCE Desktop  ·  OpenFang Agent Runtime
 
   Quick start:
     openfang-ctl status          — System & agent status
     openfang-ctl agents list     — List running agents
-    openfang-ctl config edit     — Edit configuration
-    help                         — AI-powered help (type anything)
+    openfang-ctl config edit     — Edit AI configuration
+    help <question>              — Ask the AI anything
 
-  Type natural language commands directly — aish understands you.
+  Desktop: log in as user 'ai' — Firefox, LibreOffice, and all apps are ready.
+  Terminal: type natural language commands — aish understands you.
 

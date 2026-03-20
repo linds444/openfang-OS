@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- OpenFang OS — Window Manager Settings -->
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="theme" type="string" value="Arc-Dark"/>
+    <property name="title_font" type="string" value="Ubuntu Bold 10"/>
+    <property name="title_alignment" type="string" value="center"/>
+    <property name="button_layout" type="string" value="CMH|"/>
+    <property name="workspace_count" type="int" value="2"/>
+    <property name="shadow_opacity" type="int" value="50"/>
+    <property name="shadow_delta_x" type="int" value="-2"/>
+    <property name="shadow_delta_y" type="int" value="-2"/>
+    <property name="shadow_delta_width" type="int" value="4"/>
+    <property name="shadow_delta_height" type="int" value="4"/>
+    <property name="shadow_color" type="string" value="#000000"/>
+    <property name="compositing" type="bool" value="true"/>
+    <property name="use_compositing" type="bool" value="true"/>
+    <property name="vblank_mode" type="string" value="auto"/>
+    <property name="snap_to_windows" type="bool" value="true"/>
+    <property name="snap_to_border" type="bool" value="true"/>
+    <property name="wrap_windows" type="bool" value="false"/>
+    <property name="frame_opacity" type="int" value="100"/>
+    <property name="active_opacity" type="int" value="100"/>
+    <property name="inactive_opacity" type="int" value="90"/>
+  </property>
+</channel>

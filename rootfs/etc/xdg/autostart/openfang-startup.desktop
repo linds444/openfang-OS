@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=OpenFang Startup
+Comment=Initialize OpenFang OS on desktop login
+Exec=/usr/lib/openfang/desktop-startup.sh
+Terminal=false
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+X-XFCE-Autostart-Override=false

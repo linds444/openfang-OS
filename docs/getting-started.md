@@ -1,316 +1,339 @@
 # Getting Started with OpenFang OS
 
-## What Is OpenFang OS?
+## Overview
 
-OpenFang OS is a minimal, security-hardened Linux distribution where AI agents are first-class citizens. It combines:
-
-- **Alpine Linux** as the base (small, fast, musl libc)
-- **Linux 6.6 LTS** kernel with security hardening
-- **OpenFang** — an open-source Rust agent runtime (autonomous AI workers)
-- **aish** — an AI-powered shell that understands natural language
-- **openfang-ctl** — a system control tool
-
----
-
-## Requirements
-
-### Hardware (minimum)
-| Component | Minimum | Recommended |
-|-----------|---------|-------------|
-| CPU | 64-bit, 1 core | 4+ cores |
-| RAM | 512MB | 4GB+ |
-| Disk | 4GB | 20GB+ SSD |
-| Network | Ethernet | Ethernet + optional WiFi |
-
-### For building
-- Docker 24+
-- 8GB free disk space
+OpenFang OS is a complete desktop Linux OS based on Ubuntu 24.04 LTS with:
+- Full XFCE4 desktop environment
+- Firefox browser
+- LibreOffice, VLC, GIMP, and all standard apps
+- AI shell (`aish`) that understands natural language
+- OpenFang agent runtime for background AI automation
 
 ---
 
-## Quick Start (QEMU)
+## System Requirements
 
-The fastest way to try OpenFang OS is in a VM:
+| | Minimum | Recommended |
+|--|---------|-------------|
+| CPU | 64-bit, 2 cores | 4+ cores |
+| RAM | 2GB | 8GB (4GB for AI models) |
+| Disk | 15GB | 50GB+ SSD |
+| GPU | Any | Any (no GPU required) |
+| Network | Optional | Ethernet/WiFi |
+
+---
+
+## Building the ISO
+
+You need Docker 24+ and ~20GB free disk space.
 
 ```bash
-# 1. Clone the repo
 git clone https://github.com/RightNow-AI/openfang-OS
 cd openfang-OS
 
-# 2. Build the ISO (requires Docker)
+# Build (first run takes ~20-40 minutes, then cached)
 make iso
 
-# 3. Run in QEMU
+# ISO will be at:
+ls -lh build/output/openfang-os-*.iso
+```
+
+---
+
+## Running in a VM (QEMU)
+
+```bash
+# Full desktop with GUI (recommended for testing)
+make run-gui
+
+# Headless / console mode
 make run
 ```
 
-This boots a live environment. No changes are persisted — perfect for testing.
+For `run-gui` you need:
+- `qemu-system-x86_64` with KVM
+- SDL or GTK display backend
+- At least 4GB RAM allocated
 
 ---
 
-## Installation
-
-### 1. Boot the ISO
-
-Flash the ISO to a USB drive:
+## Booting from USB
 
 ```bash
-# Linux
-sudo dd if=build/output/openfang-os-0.1.0-x86_64.iso of=/dev/sdX bs=4M status=progress conv=fsync
+# Find your USB drive
+lsblk
 
-# macOS
-sudo diskutil unmountDisk /dev/diskX
-sudo dd if=build/output/openfang-os-0.1.0-x86_64.iso of=/dev/rdiskX bs=4m
+# Flash (replace /dev/sdX with your drive)
+sudo dd if=build/output/openfang-os-0.1.0-amd64.iso \
+         of=/dev/sdX bs=4M status=progress conv=fsync && sync
 ```
 
-### 2. Run the Installer
+Boot from USB. You'll see the GRUB menu with options:
+- **OpenFang OS (Live)** — try without installing
+- **Install OpenFang OS to disk** — persistent installation
+- **Safe graphics** — if display has issues
 
-Boot from USB and run:
+---
 
-```bash
-openfang-install
+## Live Environment
+
+The live environment boots directly to the XFCE4 desktop, logged in as user `ai`.
+
+### Desktop layout
+
+```
+┌─────────────────────────────────────────────────────┐
+│ [OpenFang ▼] [Firefox] [Files] [Terminal] [AI]      │  ← Taskbar
+├─────────────────────────────────────────────────────┤
+│                                                     │
+│   [Firefox]    [AI Assistant]   [AI Terminal]       │  ← Desktop icons
+│                                                     │
+│   [Install]                                         │
+│   OpenFang                                          │
+│                                                     │
+└─────────────────────────────────────────────────────┘
 ```
 
-The installer will guide you through:
+### Immediate things to try
 
-1. Disk selection
-2. Hostname configuration
-3. LUKS2 encryption passphrase
-4. LLM provider configuration (OpenAI, Claude, Ollama, etc.)
-5. SSH public key setup
-6. GRUB installation
+1. **Open Firefox** — click the Firefox icon on the taskbar
+2. **Open AI Terminal** — double-click "AI Terminal" on the desktop
+3. **Ask AI Assistant** — double-click "AI Assistant" and type anything
+4. **Open Files** — click the folder icon on the taskbar
 
-### 3. First Boot
+---
 
-After rebooting into the installed system:
+## Installing to Disk
+
+From the live environment, click **"Install OpenFang OS"** on the desktop, or open a terminal and run:
 
 ```bash
-# SSH in (password auth is disabled — use your key)
-ssh ai@<your-ip>
+sudo openfang-install
+```
 
-# You'll land in aish (AI Shell)
-[ai@openfang ~]$
+The installer will ask:
+1. **Target disk** — which disk to install to (ALL DATA WILL BE ERASED)
+2. **Username and password** — your login credentials
+3. **Disk encryption passphrase** — LUKS2 password (remember this!)
+4. **LLM provider** — which AI backend to use
+5. **Timezone** — your timezone
 
-# Check system status
+Installation takes about 5-10 minutes. After, remove the USB and reboot.
+
+---
+
+## First Login (After Installing)
+
+Enter your LUKS2 passphrase at the boot screen, then log in with your username and password.
+
+The desktop is identical to the live environment. All apps are immediately usable.
+
+---
+
+## Configuring the AI
+
+For AI features to work, you need to configure an LLM provider. Open a terminal:
+
+### Option 1: OpenAI
+
+```bash
+openfang-ctl config set llm.provider openai
+openfang-ctl config set llm.api_key "sk-..."
+openfang-ctl config set llm.model gpt-4o-mini
+```
+
+### Option 2: Anthropic (Claude)
+
+```bash
+openfang-ctl config set llm.provider anthropic
+openfang-ctl config set llm.api_key "sk-ant-..."
+openfang-ctl config set llm.model claude-opus-4-6
+```
+
+### Option 3: Local Ollama (free, private, no internet needed)
+
+```bash
+# Install Ollama first
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Pull a model
+ollama pull llama3.2
+
+# Configure OpenFang to use it
+openfang-ctl config set llm.provider ollama
+openfang-ctl config set llm.base_url http://localhost:11434
+openfang-ctl config set llm.model llama3.2
+```
+
+Then start the agent runtime:
+
+```bash
+sudo systemctl start openfang
+sudo systemctl enable openfang   # auto-start on boot
+
+# Check it's running
 openfang-ctl status
+```
+
+---
+
+## Using the AI Shell (aish)
+
+Open a terminal from the taskbar or desktop. `aish` is the default shell.
+
+### Type naturally
+
+```bash
+[ai@openfang ~]$ show me all files larger than 100MB
+→ find / -xdev -size +100M -exec ls -lh {} \; 2>/dev/null
+
+[ai@openfang ~]$ list all running services
+→ systemctl list-units --type=service --state=running
+
+[ai@openfang ~]$ how much disk space is being used
+→ df -h
+
+[ai@openfang ~]$ open firefox and go to youtube
+→ firefox https://www.youtube.com &
+```
+
+### Safety features
+
+- AI-generated commands show the command before running
+- Type `Y` to run, `n` to skip
+- Destructive commands (`rm -rf`, `dd`, etc.) require explicit confirmation
+
+### Type regular shell commands as normal
+
+```bash
+ls -la
+cd ~/Downloads
+python3 script.py
+git clone https://github.com/...
+nano config.txt
+```
+
+---
+
+## Common Tasks
+
+### Install software
+
+```bash
+sudo apt install vlc
+sudo apt install code          # VS Code
+sudo apt install steam
+sudo snap install spotify      # or via software center
+```
+
+Or just ask aish:
+
+```bash
+[ai@openfang ~]$ install the Discord app
+→ wget -O discord.deb "https://discord.com/api/download?platform=linux&format=deb" && sudo dpkg -i discord.deb
+```
+
+### Connect to WiFi
+
+Click the network icon in the taskbar (top right). Select your network and enter the password.
+
+Or from the terminal:
+
+```bash
+nmcli device wifi connect "NetworkName" password "YourPassword"
+```
+
+### Change settings
+
+Right-click the desktop → Settings, or use the Whisker Menu (top left) → Settings.
+
+### Take a screenshot
+
+Press `Print Screen` or use the Whisker Menu → Accessories → Screenshot.
+
+### Update the system
+
+```bash
+openfang-ctl update
+# Or:
+sudo apt update && sudo apt upgrade
+```
+
+---
+
+## AI Agents
+
+Once OpenFang is running (`sudo systemctl start openfang`):
+
+```bash
+# See all agents
+openfang-ctl agents list
 
 # Start all agents
 openfang-ctl agents start-all
-```
 
----
+# Ask the AI anything
+openfang-ctl ask "why is my CPU at 100%?"
+openfang-ctl ask "how do I set up a VPN?"
+openfang-ctl ask "write a bash script to backup my home directory"
 
-## Using aish (AI Shell)
-
-`aish` is the default shell. It works like a normal shell but also understands natural language.
-
-### Regular Commands
-```bash
-[ai@openfang ~]$ ls -la
-[ai@openfang ~]$ ps aux
-[ai@openfang ~]$ vim /etc/openfang/config.toml
-```
-
-### Natural Language Commands
-```bash
-[ai@openfang ~]$ show me all processes using more than 100MB of memory
-→ ps aux --sort=-%mem | awk 'NR==1 || $6 > 102400'
-  [Run? Y/n]: Y
-USER       PID  CPU  MEM    VSZ   RSS ...
-
-[ai@openfang ~]$ find all log files older than 7 days and delete them
-→ find /var/log -name "*.log" -mtime +7 -exec rm {} \;
-  ⚠  DESTRUCTIVE COMMAND
-  Run anyway? [y/N]: y
-
-[ai@openfang ~]$ what's listening on port 8080?
-→ lsof -i :8080
-  (running...)
-```
-
-### Built-in Help
-```bash
-help how do I set up a cron job?
-help what does the security-guard agent do?
-help show me how to add an SSH key
-```
-
-### aish Keyboard Shortcuts
-| Key | Action |
-|-----|--------|
-| `↑` / `↓` | History navigation |
-| `Ctrl-A` | Beginning of line |
-| `Ctrl-E` | End of line |
-| `Ctrl-R` | Reverse history search |
-| `Ctrl-C` | Cancel current input |
-| `Ctrl-D` | Exit aish |
-
----
-
-## Using openfang-ctl
-
-`openfang-ctl` is the system management tool:
-
-```bash
-# System overview
-openfang-ctl status
-
-# System information
-openfang-ctl info
-
-# Agent management
-openfang-ctl agents list
-openfang-ctl agents start system-monitor
-openfang-ctl agents stop security-guard
-openfang-ctl agents restart ai-assistant
-openfang-ctl agents start-all
-
-# View logs
-openfang-ctl logs                     # System logs
-openfang-ctl logs security-guard      # Agent-specific logs
-openfang-ctl logs system-monitor -f   # Follow logs
-
-# Configuration
-openfang-ctl config show
-openfang-ctl config get llm.model
-openfang-ctl config set llm.model gpt-4o
-openfang-ctl config edit              # Opens in $EDITOR
-
-# Ask the AI assistant
-openfang-ctl ask "how do I add a firewall rule?"
-
-# Updates
-openfang-ctl update --check   # Check for updates
-openfang-ctl update           # Apply updates
-```
-
----
-
-## Configuring the LLM
-
-Edit `/etc/openfang/config.toml`:
-
-```bash
-openfang-ctl config edit
-```
-
-### OpenAI
-```toml
-[llm]
-provider = "openai"
-api_key  = "sk-..."
-model    = "gpt-4o"
-```
-
-### Claude (Anthropic)
-```toml
-[llm]
-provider = "anthropic"
-api_key  = "sk-ant-..."
-model    = "claude-opus-4-6"
-```
-
-### Local Ollama
-```toml
-[llm]
-provider = "ollama"
-base_url = "http://localhost:11434"
-model    = "llama3.2"
-api_key  = ""
-```
-
-After changing the config, restart the agent runtime:
-```bash
-rc-service openfang restart
-```
-
----
-
-## Adding Custom Agents
-
-Create a file in `/etc/openfang/agents/my-agent.toml`:
-
-```toml
-[agent]
-name        = "my-agent"
-description = "My custom agent"
-enabled     = true
-schedule    = "*/10 * * * *"  # Every 10 minutes
-
-[llm]
-model       = "gpt-4o-mini"
-max_tokens  = 256
-system_prompt = "You are a helpful agent that..."
-```
-
-Then restart OpenFang:
-```bash
-rc-service openfang restart
-openfang-ctl agents list
-```
-
----
-
-## Security
-
-See [security.md](security.md) for a full description of the security model.
-
-Key points:
-- **No password login** — SSH key only
-- **LUKS2 encryption** on the root partition
-- **AppArmor** profiles for all services
-- **nftables** firewall — default deny
-- **Automatic security updates** enabled by default
-
-To temporarily allow a port:
-```bash
-# Allow port 3000 (temporary — lost on reboot)
-nft add rule inet openfang_firewall input tcp dport 3000 accept
-
-# Permanent: edit /etc/openfang/config.toml
-openfang-ctl config set security.firewall_allow_ports "[22, 8080, 3000]"
-rc-service nftables restart
+# View agent logs
+openfang-ctl logs system-monitor -f
 ```
 
 ---
 
 ## Troubleshooting
 
-### OpenFang won't start
+### Display won't start
+Boot with "safe graphics" option in GRUB. Then:
 ```bash
-rc-service openfang status
-cat /var/log/openfang/openfang.log
+sudo apt install xserver-xorg-video-nouveau  # for NVIDIA
+sudo apt install xserver-xorg-video-amdgpu   # for AMD
 ```
 
-### aish AI features not working
+### No sound
 ```bash
-# Check API key
-openfang-ctl config get llm.api_key
-
-# Test API connectivity
-curl https://api.openai.com/v1/models -H "Authorization: Bearer $YOUR_KEY"
+pulseaudio --start
+pavucontrol   # opens volume control GUI
 ```
 
-### Can't SSH in
+### Can't connect to WiFi
 ```bash
-# Check SSH key is correct
-cat /home/ai/.ssh/authorized_keys
-
-# Check sshd is running
-rc-service sshd status
-
-# Check firewall
-nft list ruleset
+sudo systemctl restart NetworkManager
+nmcli radio wifi on
 ```
 
-### Disk full
+### OpenFang API not responding
 ```bash
-# Find large files
-find / -xdev -size +100M -exec ls -lh {} \; 2>/dev/null
+sudo systemctl status openfang
+sudo journalctl -u openfang -f
+openfang-ctl config validate
+```
 
-# Clean logs
-find /var/log -name "*.log" -mtime +7 -delete
+### Firefox crashes
+```bash
+# Clear profile
+rm -rf ~/.mozilla/firefox/*.default-release/sessionstore*
+```
 
-# Check agent logs
-du -sh /var/log/openfang/agents/*
+### Forgot LUKS passphrase
+Recovery is not possible — this is by design. Keep a backup of your passphrase.
+
+---
+
+## Getting Help
+
+```bash
+# AI help (if configured)
+help how do I add a user?
+openfang-ctl ask "how do I mount a USB drive?"
+
+# Manual pages
+man ls
+man systemctl
+man firefox
+
+# GitHub issues
+# https://github.com/RightNow-AI/openfang-OS/issues
 ```

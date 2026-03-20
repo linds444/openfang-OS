@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=AI Assistant
+Comment=Ask the AI assistant anything
+Icon=dialog-question
+Exec=xfce4-terminal --title="AI Assistant" --geometry=100x30 -x bash -c "/usr/lib/openfang/assistant-launcher.sh"
+Terminal=false

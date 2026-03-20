@@ -1,13 +1,14 @@
-//! openfang-ctl — OpenFang OS System Control Tool
+//! openfang-ctl — OpenFang OS System Control Tool (Ubuntu 24.04 LTS)
 //!
 //! Usage:
 //!   openfang-ctl status
-//!   openfang-ctl agents list|start|stop|restart <name>
-//!   openfang-ctl config get|set|edit <key> [value]
-//!   openfang-ctl logs [agent-name] [-f]
+//!   openfang-ctl agents list|start|stop|restart|start-all|stop-all
+//!   openfang-ctl config get|set|edit|show|validate <key> [value]
+//!   openfang-ctl logs [agent-name] [-f] [-n N]
 //!   openfang-ctl ask <question>
 //!   openfang-ctl generate-token
-//!   openfang-ctl update
+//!   openfang-ctl update [--check]
+//!   openfang-ctl info
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
@@ -18,23 +19,20 @@ use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 const OPENFANG_API: &str = "http://127.0.0.1:8080";
-const CONFIG_PATH: &str = "/etc/openfang/config.toml";
+const CONFIG_PATH:  &str = "/etc/openfang/config.toml";
 
 // ─── CLI Definition ───────────────────────────────────────────────────────────
 
 #[derive(Parser)]
 #[command(
-    name = "openfang-ctl",
-    about = "OpenFang OS system control tool",
+    name    = "openfang-ctl",
+    about   = "OpenFang OS system control tool",
     version = "0.1.0",
-    long_about = None,
 )]
 struct Cli {
-    /// OpenFang API URL
     #[arg(long, default_value = OPENFANG_API, env = "OPENFANG_API")]
     api: String,
 
-    /// Auth token
     #[arg(long, env = "OPENFANG_TOKEN")]
     token: Option<String>,
 
@@ -46,54 +44,41 @@ struct Cli {
 enum Commands {
     /// Show system and agent status
     Status,
-
-    /// Manage agents
+    /// Manage AI agents
     Agents {
         #[command(subcommand)]
         action: AgentAction,
     },
-
     /// Manage configuration
     Config {
         #[command(subcommand)]
         action: ConfigAction,
     },
-
-    /// View logs
+    /// View system or agent logs
     Logs {
-        /// Agent name (omit for system logs)
         agent: Option<String>,
-        /// Follow logs
-        #[arg(short, long)]
-        follow: bool,
-        /// Number of lines to show
-        #[arg(short = 'n', long, default_value = "50")]
-        lines: usize,
+        #[arg(short, long)] follow: bool,
+        #[arg(short = 'n', long, default_value = "50")] lines: usize,
     },
-
     /// Ask the AI assistant a question
-    Ask {
-        /// Your question
-        question: Vec<String>,
-    },
-
+    Ask { question: Vec<String> },
     /// Generate a new API auth token
     GenerateToken,
-
-    /// Update OpenFang and system packages
+    /// Update system packages and OpenFang
     Update {
-        /// Only check for updates, don't apply
-        #[arg(long)]
-        check: bool,
+        #[arg(long)] check: bool,
     },
-
     /// Show system information
     Info,
+    /// Open the Firefox browser (desktop)
+    Browser { url: Option<String> },
+    /// Restart a system service (uses systemctl)
+    Restart { service: String },
 }
 
 #[derive(Subcommand)]
 enum AgentAction {
-    /// List all agents and their status
+    /// List all agents and status
     List,
     /// Start an agent
     Start { name: String },
@@ -105,7 +90,7 @@ enum AgentAction {
     StartAll,
     /// Stop all agents
     StopAll,
-    /// Show agent logs
+    /// View agent logs
     Logs { name: String, #[arg(short, long)] follow: bool },
     /// Show detailed agent info
     Info { name: String },
@@ -119,9 +104,9 @@ enum ConfigAction {
     Set { key: String, value: String },
     /// Open config in editor
     Edit,
-    /// Show full config (redacted secrets)
+    /// Show full config (secrets redacted)
     Show,
-    /// Validate config
+    /// Validate config syntax
     Validate,
 }
 
@@ -151,17 +136,6 @@ struct AgentsResponse {
 }
 
 #[derive(Serialize)]
-struct AgentActionRequest {
-    action: String,
-}
-
-#[derive(Deserialize)]
-struct ActionResponse {
-    success: bool,
-    message: String,
-}
-
-#[derive(Serialize)]
 struct AskRequest {
     question: String,
     context: String,
@@ -170,6 +144,12 @@ struct AskRequest {
 #[derive(Deserialize)]
 struct AskResponse {
     answer: String,
+}
+
+#[derive(Deserialize)]
+struct ActionResponse {
+    success: bool,
+    message: String,
 }
 
 // ─── Controller ───────────────────────────────────────────────────────────────
@@ -189,131 +169,119 @@ impl Ctl {
         Ok(Self { api, http, token })
     }
 
-    fn auth(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
-        if let Some(token) = &self.token {
-            req.bearer_auth(token)
-        } else {
-            req
-        }
+    fn auth(&self, r: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+        if let Some(t) = &self.token { r.bearer_auth(t) } else { r }
     }
 
     async fn health(&self) -> Result<HealthResponse> {
         self.auth(self.http.get(format!("{}/health", self.api)))
-            .send()
-            .await?
-            .json()
-            .await
-            .context("Failed to parse health response")
+            .send().await?.json().await.context("health check failed")
     }
 
     async fn agents(&self) -> Result<AgentsResponse> {
         self.auth(self.http.get(format!("{}/agents", self.api)))
-            .send()
-            .await?
-            .json()
-            .await
-            .context("Failed to parse agents response")
+            .send().await?.json().await.context("agents list failed")
     }
 
     async fn agent_action(&self, name: &str, action: &str) -> Result<ActionResponse> {
-        self.auth(
-            self.http
-                .post(format!("{}/agents/{}/{}", self.api, name, action)),
-        )
-        .send()
-        .await?
-        .json()
-        .await
-        .context("Failed to parse action response")
+        self.auth(self.http.post(format!("{}/agents/{}/{}", self.api, name, action)))
+            .send().await?.json().await.context("agent action failed")
     }
 
     async fn ask(&self, question: &str) -> Result<AskResponse> {
         let req = AskRequest {
             question: question.to_string(),
             context: format!(
-                "Running on OpenFang OS. Hostname: {}",
-                std::fs::read_to_string("/etc/hostname")
-                    .unwrap_or_default()
-                    .trim()
-                    .to_string()
+                "Running OpenFang OS (Ubuntu 24.04 LTS). Hostname: {}. Shell: aish.",
+                hostname()
             ),
         };
         self.auth(self.http.post(format!("{}/ask", self.api)))
-            .json(&req)
-            .send()
-            .await?
-            .json()
-            .await
-            .context("Failed to parse ask response")
+            .json(&req).send().await?.json().await.context("ask failed")
     }
 }
 
-// ─── Status display ───────────────────────────────────────────────────────────
+// ─── Commands ─────────────────────────────────────────────────────────────────
 
 async fn cmd_status(ctl: &Ctl) -> Result<()> {
     println!("\n{}", "  OpenFang OS — System Status".bold().cyan());
-    println!("  {}", "─".repeat(50).dimmed());
+    println!("  {}", "─".repeat(52).dimmed());
 
-    // Health check
+    // OpenFang API health
     match ctl.health().await {
         Ok(h) => {
-            let uptime = humantime::format_duration(Duration::from_secs(h.uptime_secs));
+            let up = humantime::format_duration(Duration::from_secs(h.uptime_secs));
             println!("  {} {}", "Agent Runtime:".bold(), "online".green().bold());
-            println!("  {} {}", "Version:".bold(), h.version.cyan());
-            println!("  {} {}", "Uptime:".bold(), uptime.to_string().cyan());
+            println!("  {} v{}", "Version:".bold(), h.version.cyan());
+            println!("  {} {}", "Uptime:".bold(), up.to_string().cyan());
         }
-        Err(e) => {
+        Err(_) => {
             println!("  {} {}", "Agent Runtime:".bold(), "offline".red().bold());
-            println!("  {}", format!("  {}", e).dimmed());
-            println!();
-            println!("  Run: {}", "rc-service openfang start".yellow());
-            println!();
-            return Ok(());
+            println!("  {}", "Start: sudo systemctl start openfang".yellow());
         }
     }
 
-    // System stats from /proc
+    // systemd service status
+    println!();
+    println!("  {}", "System Services:".bold());
+    for svc in &["openfang", "lightdm", "NetworkManager", "ssh", "ufw", "apparmor"] {
+        let status = systemd_status(svc);
+        let indicator = if status == "active" {
+            "●".green().to_string()
+        } else {
+            "○".red().to_string()
+        };
+        println!("    {} {:20} {}", indicator, svc.cyan(), status.dimmed());
+    }
+
+    // System stats
     println!();
     print_system_stats();
 
     // Agents
     println!();
-    println!("  {}", "Agents:".bold());
+    println!("  {}", "AI Agents:".bold());
     match ctl.agents().await {
         Ok(resp) => {
             for agent in &resp.agents {
-                let status_colored = match agent.status.as_str() {
+                let status_c = match agent.status.as_str() {
                     "running" => agent.status.green().bold(),
                     "stopped" => agent.status.red().bold(),
                     "error"   => agent.status.red().bold(),
                     _         => agent.status.yellow().bold(),
                 };
                 println!(
-                    "    {:20} {}  (runs: {}, errors: {})",
+                    "    {:24} {}  (runs: {}, errors: {})",
                     agent.name.cyan(),
-                    status_colored,
+                    status_c,
                     agent.runs_total,
                     if agent.errors_total > 0 {
                         agent.errors_total.to_string().red().to_string()
-                    } else {
-                        "0".into()
-                    }
+                    } else { "0".into() }
                 );
             }
         }
-        Err(_) => println!("    {}", "(could not fetch agent list)".dimmed()),
+        Err(_) => println!("    {}", "(API offline — start openfang to see agents)".dimmed()),
     }
 
     println!();
     Ok(())
 }
 
+fn systemd_status(service: &str) -> String {
+    std::process::Command::new("systemctl")
+        .args(["is-active", "--quiet", service])
+        .status()
+        .map(|s| if s.success() { "active" } else { "inactive" })
+        .unwrap_or("unknown")
+        .to_string()
+}
+
 fn print_system_stats() {
-    // Memory
-    if let Ok(meminfo) = std::fs::read_to_string("/proc/meminfo") {
+    // Memory from /proc/meminfo
+    if let Ok(m) = std::fs::read_to_string("/proc/meminfo") {
         let get = |key: &str| -> u64 {
-            meminfo
-                .lines()
+            m.lines()
                 .find(|l| l.starts_with(key))
                 .and_then(|l| l.split_whitespace().nth(1))
                 .and_then(|v| v.parse().ok())
@@ -333,36 +301,23 @@ fn print_system_stats() {
     }
 
     // Load average
-    if let Ok(load) = std::fs::read_to_string("/proc/loadavg") {
-        let parts: Vec<&str> = load.split_whitespace().collect();
-        if parts.len() >= 3 {
-            println!(
-                "  {} {} {} {}",
-                "Load avg:".bold(),
-                parts[0].cyan(),
-                parts[1].cyan(),
-                parts[2].cyan()
-            );
+    if let Ok(l) = std::fs::read_to_string("/proc/loadavg") {
+        let p: Vec<&str> = l.split_whitespace().collect();
+        if p.len() >= 3 {
+            println!("  {} {} {} {}", "Load avg:".bold(),
+                p[0].cyan(), p[1].cyan(), p[2].cyan());
         }
     }
 
     // Disk
-    let disk = std::process::Command::new("df")
-        .args(["-h", "/"])
-        .output()
-        .ok();
-    if let Some(out) = disk {
-        if let Ok(s) = std::str::from_utf8(&out.stdout) {
+    if let Ok(o) = std::process::Command::new("df").args(["-h", "/"]).output() {
+        if let Ok(s) = std::str::from_utf8(&o.stdout) {
             if let Some(line) = s.lines().nth(1) {
-                let parts: Vec<&str> = line.split_whitespace().collect();
-                if parts.len() >= 5 {
-                    println!(
-                        "  {} {}/{} used ({})",
+                let p: Vec<&str> = line.split_whitespace().collect();
+                if p.len() >= 5 {
+                    println!("  {} {}/{} used ({})",
                         "Disk (/):".bold(),
-                        parts[2].cyan(),
-                        parts[1].cyan(),
-                        parts[4].cyan()
-                    );
+                        p[2].cyan(), p[1].cyan(), p[4].cyan());
                 }
             }
         }
@@ -374,94 +329,78 @@ async fn cmd_agents(ctl: &Ctl, action: AgentAction) -> Result<()> {
         AgentAction::List => {
             let resp = ctl.agents().await?;
             let mut table = Table::new();
-            table.set_header(vec!["Name", "Status", "Runs", "Errors", "Last Run", "Next Run"]);
-
-            for agent in &resp.agents {
-                let status_cell = match agent.status.as_str() {
+            table.set_header(["Name", "Status", "Runs", "Errors", "Last Run", "Next Run"]);
+            for a in &resp.agents {
+                let sc = match a.status.as_str() {
                     "running" => Cell::new("● running").fg(Color::Green),
                     "stopped" => Cell::new("○ stopped").fg(Color::Red),
                     "error"   => Cell::new("✗ error").fg(Color::Red),
-                    _         => Cell::new(&agent.status).fg(Color::Yellow),
+                    _         => Cell::new(&a.status).fg(Color::Yellow),
                 };
-
-                table.add_row(vec![
-                    Cell::new(&agent.name),
-                    status_cell,
-                    Cell::new(agent.runs_total).set_alignment(CellAlignment::Right),
-                    Cell::new(agent.errors_total).set_alignment(CellAlignment::Right),
-                    Cell::new(agent.last_run.as_deref().unwrap_or("-")),
-                    Cell::new(agent.next_run.as_deref().unwrap_or("-")),
+                table.add_row([
+                    Cell::new(&a.name),
+                    sc,
+                    Cell::new(a.runs_total).set_alignment(CellAlignment::Right),
+                    Cell::new(a.errors_total).set_alignment(CellAlignment::Right),
+                    Cell::new(a.last_run.as_deref().unwrap_or("-")),
+                    Cell::new(a.next_run.as_deref().unwrap_or("-")),
                 ]);
             }
-
             println!("{table}");
         }
-
         AgentAction::Start { name } => {
-            print!("Starting {}...", name.cyan());
-            let resp = ctl.agent_action(&name, "start").await?;
-            println!(" {}", if resp.success { "OK".green() } else { resp.message.red() });
+            print!("Starting {}... ", name.cyan());
+            let r = ctl.agent_action(&name, "start").await?;
+            println!("{}", if r.success { "OK".green() } else { r.message.red() });
         }
-
         AgentAction::Stop { name } => {
-            print!("Stopping {}...", name.cyan());
-            let resp = ctl.agent_action(&name, "stop").await?;
-            println!(" {}", if resp.success { "OK".green() } else { resp.message.red() });
+            print!("Stopping {}... ", name.cyan());
+            let r = ctl.agent_action(&name, "stop").await?;
+            println!("{}", if r.success { "OK".green() } else { r.message.red() });
         }
-
         AgentAction::Restart { name } => {
-            print!("Restarting {}...", name.cyan());
-            let resp = ctl.agent_action(&name, "restart").await?;
-            println!(" {}", if resp.success { "OK".green() } else { resp.message.red() });
+            print!("Restarting {}... ", name.cyan());
+            let r = ctl.agent_action(&name, "restart").await?;
+            println!("{}", if r.success { "OK".green() } else { r.message.red() });
         }
-
         AgentAction::StartAll => {
             println!("Starting all agents...");
             let resp = ctl.agents().await?;
-            for agent in &resp.agents {
-                print!("  {}...", agent.name.cyan());
-                let r = ctl.agent_action(&agent.name, "start").await?;
-                println!(" {}", if r.success { "OK".green() } else { r.message.yellow() });
+            for a in &resp.agents {
+                print!("  {}... ", a.name.cyan());
+                let r = ctl.agent_action(&a.name, "start").await?;
+                println!("{}", if r.success { "OK".green() } else { r.message.yellow() });
             }
         }
-
         AgentAction::StopAll => {
             println!("Stopping all agents...");
             let resp = ctl.agents().await?;
-            for agent in &resp.agents {
-                print!("  {}...", agent.name.cyan());
-                let r = ctl.agent_action(&agent.name, "stop").await?;
-                println!(" {}", if r.success { "OK".green() } else { r.message.yellow() });
+            for a in &resp.agents {
+                print!("  {}... ", a.name.cyan());
+                let r = ctl.agent_action(&a.name, "stop").await?;
+                println!("{}", if r.success { "OK".green() } else { r.message.yellow() });
             }
         }
-
         AgentAction::Logs { name, follow } => {
-            let log_path = format!("/var/log/openfang/agents/{}.log", name);
-            if follow {
-                std::process::Command::new("tail")
-                    .args(["-f", &log_path])
-                    .status()?;
-            } else {
-                std::process::Command::new("tail")
-                    .args(["-n", "100", &log_path])
-                    .status()?;
-            }
+            let path = format!("/var/log/openfang/agents/{}.log", name);
+            let mut args = vec![if follow { "-f" } else { "-n" }];
+            if !follow { args.push("100"); }
+            args.push(&path);
+            std::process::Command::new("tail").args(&args).status()?;
         }
-
         AgentAction::Info { name } => {
             let resp = ctl.agents().await?;
-            match resp.agents.iter().find(|a| a.name == name) {
-                Some(agent) => {
-                    println!("{}", "Agent Information".bold().cyan());
-                    println!("  Name:        {}", agent.name.cyan());
-                    println!("  Description: {}", agent.description);
-                    println!("  Status:      {}", agent.status);
-                    println!("  Runs:        {}", agent.runs_total);
-                    println!("  Errors:      {}", agent.errors_total);
-                    println!("  Last run:    {}", agent.last_run.as_deref().unwrap_or("-"));
-                    println!("  Next run:    {}", agent.next_run.as_deref().unwrap_or("-"));
-                }
-                None => eprintln!("Agent not found: {}", name.red()),
+            if let Some(a) = resp.agents.iter().find(|x| x.name == name) {
+                println!("{}", "Agent Information".bold().cyan());
+                println!("  Name:        {}", a.name.cyan());
+                println!("  Description: {}", a.description);
+                println!("  Status:      {}", a.status);
+                println!("  Runs:        {}", a.runs_total);
+                println!("  Errors:      {}", a.errors_total);
+                println!("  Last run:    {}", a.last_run.as_deref().unwrap_or("-"));
+                println!("  Next run:    {}", a.next_run.as_deref().unwrap_or("-"));
+            } else {
+                eprintln!("Agent not found: {}", name.red());
             }
         }
     }
@@ -472,72 +411,57 @@ async fn cmd_config(action: ConfigAction) -> Result<()> {
     match action {
         ConfigAction::Get { key } => {
             let content = std::fs::read_to_string(CONFIG_PATH)
-                .context("Cannot read config")?;
-            // Simple TOML key lookup
-            for line in content.lines() {
-                if line.trim_start().starts_with(&format!("{} =", key.split('.').last().unwrap_or(&key)))
-                    || line.trim_start().starts_with(&format!("{}=", key.split('.').last().unwrap_or(&key)))
-                {
-                    let value = line.split('=').skip(1).collect::<Vec<_>>().join("=").trim().to_string();
-                    println!("{} = {}", key.cyan(), value);
-                    return Ok(());
-                }
+                .context("Cannot read config — try: sudo openfang-ctl config get ...")?;
+            let leaf = key.split('.').last().unwrap_or(&key);
+            let found = content.lines().find(|l| {
+                let t = l.trim_start();
+                t.starts_with(&format!("{} =", leaf)) || t.starts_with(&format!("{}=", leaf))
+            });
+            match found {
+                Some(l) => println!("{} ={}", key.cyan(),
+                    l.splitn(2, '=').nth(1).unwrap_or("").trim()),
+                None => println!("{}", format!("Key '{}' not found", key).yellow()),
             }
-            println!("{}", format!("Key '{}' not found", key).yellow());
         }
-
         ConfigAction::Set { key, value } => {
             let content = std::fs::read_to_string(CONFIG_PATH)
                 .context("Cannot read config")?;
             let leaf = key.split('.').last().unwrap_or(&key);
-            let new_content: Vec<String> = content
-                .lines()
-                .map(|line| {
-                    if line.trim_start().starts_with(&format!("{} =", leaf))
-                        || line.trim_start().starts_with(&format!("{}=", leaf))
-                    {
-                        format!("{} = \"{}\"", leaf, value)
-                    } else {
-                        line.to_string()
-                    }
-                })
-                .collect();
-            std::fs::write(CONFIG_PATH, new_content.join("\n") + "\n")
-                .context("Cannot write config")?;
+            let new: Vec<String> = content.lines().map(|l| {
+                let t = l.trim_start();
+                if t.starts_with(&format!("{} =", leaf)) || t.starts_with(&format!("{}=", leaf)) {
+                    format!("{} = \"{}\"", leaf, value)
+                } else { l.to_string() }
+            }).collect();
+            std::fs::write(CONFIG_PATH, new.join("\n") + "\n")
+                .context("Cannot write config — try: sudo openfang-ctl config set ...")?;
             println!("Set {} = {}", key.cyan(), value.green());
         }
-
         ConfigAction::Edit => {
-            let editor = std::env::var("EDITOR").unwrap_or_else(|_| "nano".into());
-            std::process::Command::new(&editor)
-                .arg(CONFIG_PATH)
-                .status()
+            let editor = std::env::var("EDITOR")
+                .or_else(|_| std::env::var("VISUAL"))
+                .unwrap_or_else(|_| "mousepad".into());
+            std::process::Command::new(&editor).arg(CONFIG_PATH).status()
                 .context("Failed to open editor")?;
         }
-
         ConfigAction::Show => {
             let content = std::fs::read_to_string(CONFIG_PATH)
                 .context("Cannot read config")?;
-            // Redact secrets
             for line in content.lines() {
                 if line.contains("api_key") || line.contains("password") || line.contains("token") {
-                    let key_part = line.split('=').next().unwrap_or("");
-                    println!("{} = {}", key_part, "\"[REDACTED]\"".dimmed());
+                    let k = line.splitn(2, '=').next().unwrap_or("").trim();
+                    println!("{} = {}", k, "\"[REDACTED]\"".dimmed());
                 } else {
                     println!("{}", line);
                 }
             }
         }
-
         ConfigAction::Validate => {
             let content = std::fs::read_to_string(CONFIG_PATH)
                 .context("Cannot read config")?;
             match toml::from_str::<toml::Value>(&content) {
                 Ok(_) => println!("{}", "Config is valid TOML.".green()),
-                Err(e) => {
-                    eprintln!("{} {}", "Config validation failed:".red().bold(), e);
-                    std::process::exit(1);
-                }
+                Err(e) => { eprintln!("{} {}", "Validation failed:".red().bold(), e); std::process::exit(1); }
             }
         }
     }
@@ -545,21 +469,15 @@ async fn cmd_config(action: ConfigAction) -> Result<()> {
 }
 
 async fn cmd_logs(agent: Option<String>, follow: bool, lines: usize) -> Result<()> {
-    let log_path = match agent {
+    let path = match agent {
         Some(name) => format!("/var/log/openfang/agents/{}.log", name),
-        None       => "/var/log/openfang/openfang.log".to_string(),
+        None       => "/var/log/openfang/openfang.log".into(),
     };
-
-    let mut args = vec!["-n".to_string(), lines.to_string(), log_path.clone()];
-    if follow {
-        args.insert(0, "-f".to_string());
-    }
-
-    std::process::Command::new("tail")
-        .args(&args)
-        .status()
-        .with_context(|| format!("Cannot read log: {}", log_path))?;
-
+    let n = lines.to_string();
+    let mut args = vec!["-n", &n, &path];
+    if follow { args.insert(0, "-f"); }
+    std::process::Command::new("tail").args(&args).status()
+        .with_context(|| format!("Cannot read: {}", path))?;
     Ok(())
 }
 
@@ -567,57 +485,57 @@ async fn cmd_ask(ctl: &Ctl, question: Vec<String>) -> Result<()> {
     let q = question.join(" ");
     println!("{}", "  Asking AI assistant...".dimmed());
     match ctl.ask(&q).await {
-        Ok(resp) => {
-            println!("\n{}\n{}\n", "  Answer:".cyan().bold(), resp.answer);
-        }
+        Ok(r) => println!("\n{}\n{}\n", "  Answer:".cyan().bold(), r.answer),
         Err(e) => {
             eprintln!("{} {}", "Error:".red(), e);
-            eprintln!("{}", "Make sure OpenFang is running and configured.".dimmed());
+            eprintln!("{}", "Make sure OpenFang is running: sudo systemctl start openfang".dimmed());
         }
     }
     Ok(())
 }
 
 fn cmd_info() {
-    println!("{}", "\n  OpenFang OS System Information".bold().cyan());
-    println!("  {}", "─".repeat(40).dimmed());
+    println!("{}", "\n  OpenFang OS — System Information".bold().cyan());
+    println!("  {}", "─".repeat(42).dimmed());
 
-    // OS info
-    if let Ok(content) = std::fs::read_to_string("/etc/os-release") {
-        for line in content.lines() {
+    // OS
+    if let Ok(c) = std::fs::read_to_string("/etc/os-release") {
+        for line in c.lines() {
             if line.starts_with("PRETTY_NAME") {
-                let v = line.split('=').nth(1).unwrap_or("").trim_matches('"');
-                println!("  {} {}", "OS:".bold(), v.cyan());
+                println!("  {} {}", "OS:".bold(),
+                    line.split('=').nth(1).unwrap_or("").trim_matches('"').cyan());
             }
         }
     }
 
     // Kernel
-    if let Ok(out) = std::process::Command::new("uname").args(["-r"]).output() {
-        if let Ok(v) = std::str::from_utf8(&out.stdout) {
-            println!("  {} {}", "Kernel:".bold(), v.trim().cyan());
-        }
+    if let Ok(o) = std::process::Command::new("uname").args(["-r"]).output() {
+        println!("  {} {}", "Kernel:".bold(),
+            std::str::from_utf8(&o.stdout).unwrap_or("").trim().cyan());
     }
 
     // Architecture
-    if let Ok(out) = std::process::Command::new("uname").args(["-m"]).output() {
-        if let Ok(v) = std::str::from_utf8(&out.stdout) {
-            println!("  {} {}", "Arch:".bold(), v.trim().cyan());
-        }
+    if let Ok(o) = std::process::Command::new("uname").args(["-m"]).output() {
+        println!("  {} {}", "Arch:".bold(),
+            std::str::from_utf8(&o.stdout).unwrap_or("").trim().cyan());
     }
 
     // Hostname
-    if let Ok(h) = std::fs::read_to_string("/etc/hostname") {
-        println!("  {} {}", "Hostname:".bold(), h.trim().cyan());
-    }
+    println!("  {} {}", "Hostname:".bold(), hostname().cyan());
 
     // Uptime
     if let Ok(u) = std::fs::read_to_string("/proc/uptime") {
-        if let Some(secs) = u.split_whitespace().next().and_then(|s| s.parse::<f64>().ok()) {
-            let uptime = humantime::format_duration(Duration::from_secs(secs as u64));
-            println!("  {} {}", "Uptime:".bold(), uptime.to_string().cyan());
+        if let Some(s) = u.split_whitespace().next().and_then(|s| s.parse::<f64>().ok()) {
+            println!("  {} {}", "Uptime:".bold(),
+                humantime::format_duration(Duration::from_secs(s as u64)).to_string().cyan());
         }
     }
+
+    // Desktop
+    let display = std::env::var("DISPLAY").unwrap_or_else(|_| "(none)".into());
+    let session = std::env::var("XDG_SESSION_TYPE").unwrap_or_else(|_| "tty".into());
+    println!("  {} {}", "Display:".bold(), display.cyan());
+    println!("  {} {}", "Session:".bold(), session.cyan());
 
     println!();
     print_system_stats();
@@ -628,21 +546,19 @@ fn cmd_generate_token() {
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     use std::time::{SystemTime, UNIX_EPOCH};
-
-    let mut hasher = DefaultHasher::new();
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos()
-        .hash(&mut hasher);
-    std::process::id().hash(&mut hasher);
-    let token = format!("ofk_{:016x}", hasher.finish());
+    let mut h = DefaultHasher::new();
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos().hash(&mut h);
+    std::process::id().hash(&mut h);
+    let token = format!("ofk_{:016x}", h.finish());
     println!("Generated token: {}", token.cyan().bold());
-    println!();
-    println!("Add to /etc/openfang/config.toml:");
-    println!("  {}", format!("auth_token = \"{}\"", token).yellow());
-    println!();
-    println!("Or set environment variable: {}", format!("export OPENFANG_TOKEN={}", token).yellow());
+    println!("\nAdd to /etc/openfang/config.toml:");
+    println!("  {}", format!("[agents.api]\nauth_token = \"{}\"", token).yellow());
+}
+
+fn hostname() -> String {
+    std::fs::read_to_string("/etc/hostname")
+        .unwrap_or_else(|_| "openfang".into())
+        .trim().to_string()
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -660,16 +576,37 @@ async fn main() -> Result<()> {
         Commands::Ask { question } => cmd_ask(&ctl, question).await?,
         Commands::GenerateToken => cmd_generate_token(),
         Commands::Info => cmd_info(),
+
+        Commands::Browser { url } => {
+            let u = url.as_deref().unwrap_or("about:newtab");
+            std::process::Command::new("firefox").arg(u).spawn()?;
+            println!("Opened Firefox: {}", u.cyan());
+        }
+
+        Commands::Restart { service } => {
+            println!("Restarting {}...", service.cyan());
+            let status = std::process::Command::new("sudo")
+                .args(["systemctl", "restart", &service])
+                .status()?;
+            if status.success() {
+                println!("{}", "Done.".green());
+            } else {
+                eprintln!("{}", "Failed to restart service.".red());
+            }
+        }
+
         Commands::Update { check } => {
             if check {
-                println!("Checking for updates...");
-                std::process::Command::new("apk").args(["update"]).status()?;
-                std::process::Command::new("apk").args(["list", "--upgradeable"]).status()?;
+                println!("{}", "Checking for updates...".cyan());
+                std::process::Command::new("apt-get").args(["update"]).status()?;
+                std::process::Command::new("apt-get")
+                    .args(["--simulate", "upgrade"]).status()?;
             } else {
                 println!("{}", "Updating OpenFang OS...".cyan());
-                std::process::Command::new("apk").args(["update"]).status()?;
-                std::process::Command::new("apk").args(["upgrade"]).status()?;
-                println!("{}", "Update complete.".green());
+                std::process::Command::new("apt-get").args(["update"]).status()?;
+                std::process::Command::new("apt-get")
+                    .args(["-y", "upgrade"]).status()?;
+                println!("{}", "Update complete. Restart may be required.".green());
             }
         }
     }
