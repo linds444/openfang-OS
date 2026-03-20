@@ -16,8 +16,12 @@ ISO_NAME     := openfang-os-$(VERSION)-$(ARCH).iso
 IMG_NAME     := openfang-os-$(VERSION)-$(ARCH).img
 
 # Docker
+# --platform linux/amd64 is required on Apple Silicon (M1/M2/M3) Macs
+# to build an x86_64 ISO; Docker uses QEMU emulation transparently.
+DOCKER_PLATFORM := --platform linux/amd64
 BUILDER_IMG  := openfang-builder:$(VERSION)
-BUILD_ARGS   := --build-arg UBUNTU_VER=$(UBUNTU_VER) \
+BUILD_ARGS   := $(DOCKER_PLATFORM) \
+                --build-arg UBUNTU_VER=$(UBUNTU_VER) \
                 --build-arg VERSION=$(VERSION) \
                 --build-arg ARCH=$(ARCH)
 
@@ -61,7 +65,7 @@ check-deps:
 builder: check-deps
 	@echo "[*] Building Docker build environment..."
 	docker build $(BUILD_ARGS) -t $(BUILDER_IMG) -f build/Dockerfile build/
-	@echo "[+] Builder ready: $(BUILDER_IMG)"
+	@echo "[+] Builder ready: $(BUILDER_IMG) (linux/amd64)"
 
 ## Build the AI Shell
 aish:
@@ -83,7 +87,7 @@ openfang-ctl:
 iso: builder
 	@echo "[*] Building ISO: $(ISO_NAME)..."
 	mkdir -p $(BUILD_DIR)
-	docker run --rm --privileged \
+	docker run --rm --privileged $(DOCKER_PLATFORM) \
 		-v "$(PWD)/$(BUILD_DIR):/output" \
 		-v "$(PWD)/build/work:/build/work" \
 		-v "$(PWD)/rootfs:/rootfs:ro" \
@@ -98,7 +102,7 @@ iso: builder
 ## Build flashable disk image
 image: iso
 	@echo "[*] Building disk image: $(IMG_NAME)..."
-	docker run --rm --privileged \
+	docker run --rm --privileged $(DOCKER_PLATFORM) \
 		-v "$(PWD)/$(BUILD_DIR):/output" \
 		-e ISO_NAME=$(ISO_NAME) \
 		-e IMG_NAME=$(IMG_NAME) \
@@ -147,7 +151,7 @@ run-gui:
 
 ## Drop into build container shell
 dev-shell: builder
-	docker run --rm -it --privileged \
+	docker run --rm -it --privileged $(DOCKER_PLATFORM) \
 		-v "$(PWD):/workspace" \
 		-v "$(PWD)/$(BUILD_DIR):/output" \
 		-v "$(PWD)/build/work:/build/work" \
