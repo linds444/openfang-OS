@@ -1,0 +1,25 @@
+[Unit]
+Description=OpenFang OS System Update
+Documentation=https://github.com/RightNow-AI/openfang-OS
+After=network-online.target
+Wants=network-online.target
+# Don't run during first-boot setup
+After=openfang-first-boot.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/openfang/update.sh
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=openfang-update
+
+# Allow apt and file writes
+PrivateTmp=false
+ProtectSystem=false
+ProtectHome=false
+
+# Limit network to what's needed
+RestrictAddressFamilies=AF_INET AF_INET6
+
+# 30 minute timeout (large distro upgrades can be slow)
+TimeoutStartSec=1800

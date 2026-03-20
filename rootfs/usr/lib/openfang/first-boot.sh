@@ -10,6 +10,17 @@ log "=== OpenFang OS First Boot Setup ==="
 
 mkdir -p /var/log/openfang /data/openfang /var/lib/openfang/security /run/openfang
 
+# Record the version that was baked into the ISO so update.sh can compare
+if [ ! -f /var/lib/openfang/version ]; then
+    grep '^VERSION_ID=' /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d '"' \
+        > /var/lib/openfang/version || echo "0.0.0" > /var/lib/openfang/version
+    # Prefer openfang-specific version if present
+    if grep -q '^OPENFANG_VERSION=' /etc/os-release 2>/dev/null; then
+        grep '^OPENFANG_VERSION=' /etc/os-release | cut -d= -f2 | tr -d '"' \
+            > /var/lib/openfang/version
+    fi
+fi
+
 # Create openfang system user if it doesn't exist
 if ! id openfang >/dev/null 2>&1; then
     useradd -r -s /sbin/nologin -d /var/lib/openfang -c "OpenFang Agent Runtime" openfang

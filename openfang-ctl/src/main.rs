@@ -64,9 +64,14 @@ enum Commands {
     Ask { question: Vec<String> },
     /// Generate a new API auth token
     GenerateToken,
-    /// Update system packages and OpenFang
+    /// Update OS packages and OpenFang components
     Update {
+        /// Dry-run: show available updates without installing
         #[arg(long)] check: bool,
+        /// Update OS packages only (skip OpenFang release download)
+        #[arg(long)] os_only: bool,
+        /// Update OpenFang components only (skip apt)
+        #[arg(long)] openfang_only: bool,
     },
     /// Show system information
     Info,
@@ -595,19 +600,33 @@ async fn main() -> Result<()> {
             }
         }
 
-        Commands::Update { check } => {
+        Commands::Update { check, os_only, openfang_only } => {
+            const UPDATE_SCRIPT: &str = "/usr/lib/openfang/update.sh";
+
+            if !std::path::Path::new(UPDATE_SCRIPT).exists() {
+                eprintln!("{}", format!("Update script not found: {}", UPDATE_SCRIPT).red());
+                std::process::exit(1);
+            }
+
+            let mut args: Vec<&str> = vec![];
+            if check         { args.push("--check"); }
+            if os_only       { args.push("--os-only"); }
+            if openfang_only { args.push("--openfang-only"); }
+
             if check {
-                println!("{}", "Checking for updates...".cyan());
-                std::process::Command::new("apt-get").args(["update"]).status()?;
-                std::process::Command::new("apt-get")
-                    .args(["--simulate", "upgrade"]).status()?;
+                println!("{}", "Checking for available updates...".cyan());
             } else {
                 println!("{}", "Updating OpenFang OS...".cyan());
-                std::process::Command::new("apt-get").args(["update"]).status()?;
-                std::process::Command::new("apt-get")
-                    .args(["-y", "upgrade"]).status()?;
-                println!("{}", "Update complete. Restart may be required.".green());
+                println!("{}", "  (requires root — run: sudo openfang-ctl update)".dimmed());
             }
+
+            let status = std::process::Command::new("bash")
+                .arg(UPDATE_SCRIPT)
+                .args(&args)
+                .status()
+                .with_context(|| format!("Failed to run {}", UPDATE_SCRIPT))?;
+
+            std::process::exit(status.code().unwrap_or(1));
         }
     }
 

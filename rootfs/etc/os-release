@@ -13,4 +13,5 @@ PRIVACY_POLICY_URL="https://github.com/RightNow-AI/openfang"
 UBUNTU_CODENAME=noble
 LOGO=openfang
 ANSI_COLOR="1;36"
+OPENFANG_VERSION="0.1.0"
 BUILD_ID="@BUILD_ID@"

@@ -31,7 +31,11 @@ BUILD_ARGS   := $(DOCKER_PLATFORM) \
 # that require xattr/capability support (e.g. libcap2-bin, ping, etc.).
 WORK_VOLUME  := openfang-work-$(VERSION)
 
-.PHONY: all iso image run clean builder aish openfang-ctl \
+# Update tarball — what GitHub Releases hosts; downloaded by update.sh on installed systems
+UPDATE_NAME  := openfang-update-$(VERSION)-$(ARCH)
+UPDATE_TAR   := $(BUILD_DIR)/$(UPDATE_NAME).tar.gz
+
+.PHONY: all iso image release run run-gui clean builder aish openfang-ctl \
         dev-shell lint check-deps help
 
 ## Default target
@@ -44,6 +48,7 @@ help:
 	@echo "Targets:"
 	@echo "  make iso          Build a bootable live ISO (~4GB)"
 	@echo "  make image        Build a flashable encrypted disk image"
+	@echo "  make release      Build the update tarball for GitHub Releases"
 	@echo "  make run          Run the ISO in QEMU (2GB RAM)"
 	@echo "  make run-gui      Run in QEMU with display (KVM accelerated)"
 	@echo "  make builder      Build the Docker build environment"
@@ -119,6 +124,27 @@ image: iso
 		-e IMG_NAME=$(IMG_NAME) \
 		$(BUILDER_IMG) bash /scripts/image.sh
 	@echo "[+] Image ready: $(BUILD_DIR)/$(IMG_NAME)"
+
+## Build the update tarball for GitHub Releases
+##   Contains compiled binaries + rootfs overlay.
+##   Uploaded to: github.com/RightNow-AI/openfang-OS/releases/download/v$(VERSION)/$(UPDATE_NAME).tar.gz
+##   Downloaded automatically by: sudo openfang-ctl update  (on installed systems)
+release: aish openfang-ctl
+	@echo "[*] Building update tarball: $(UPDATE_NAME).tar.gz..."
+	mkdir -p $(BUILD_DIR)
+	rm -rf   $(BUILD_DIR)/$(UPDATE_NAME)
+	mkdir -p $(BUILD_DIR)/$(UPDATE_NAME)/bin
+	mkdir -p $(BUILD_DIR)/$(UPDATE_NAME)/rootfs
+	cp $(BUILD_DIR)/bin/aish           $(BUILD_DIR)/$(UPDATE_NAME)/bin/
+	cp $(BUILD_DIR)/bin/openfang-ctl   $(BUILD_DIR)/$(UPDATE_NAME)/bin/
+	rsync -a rootfs/ $(BUILD_DIR)/$(UPDATE_NAME)/rootfs/
+	tar -czf $(UPDATE_TAR) -C $(BUILD_DIR) $(UPDATE_NAME)
+	rm -rf   $(BUILD_DIR)/$(UPDATE_NAME)
+	sha256sum $(UPDATE_TAR) > $(UPDATE_TAR).sha256
+	@echo "[+] Update tarball: $(UPDATE_TAR)"
+	@echo "[+] SHA256:         $(UPDATE_TAR).sha256"
+	@echo ""
+	@echo "Upload both files to the GitHub Release for v$(VERSION)."
 
 ## Run in QEMU (console mode)
 run:

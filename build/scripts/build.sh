@@ -343,6 +343,11 @@ systemctl enable ufw
 systemctl enable apparmor
 systemctl enable fail2ban
 
+# Enable the update timer so installs get OS + OpenFang updates automatically.
+# Controlled at runtime by: systemctl enable/disable openfang-update.timer
+# and the auto_update setting in /etc/openfang/config.toml.
+systemctl enable openfang-update.timer
+
 # Disable services not needed
 systemctl disable ModemManager 2>/dev/null || true
 

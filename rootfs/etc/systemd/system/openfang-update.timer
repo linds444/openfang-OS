@@ -1,0 +1,17 @@
+[Unit]
+Description=OpenFang OS Weekly Update Check
+Documentation=https://github.com/RightNow-AI/openfang-OS
+
+[Timer]
+# Run weekly, at a random time on Sunday between 02:00–04:00
+# to spread load across the fleet
+OnCalendar=Sun *-*-* 02:00:00
+RandomizedDelaySec=2h
+Persistent=true
+
+# Also run once at boot if the last run was missed (e.g. machine was off)
+# Delayed 10 minutes to let the system settle first
+OnBootSec=10min
+
+[Install]
+WantedBy=timers.target
