@@ -2,8 +2,9 @@
 # Produces a full desktop Linux ISO with AI-native features
 
 ARG UBUNTU_VER=24.04
-# Force amd64 — the ISO we build is always x86_64 regardless of host arch (Mac M1/M2/M3)
-FROM --platform=linux/amd64 ubuntu:${UBUNTU_VER} AS builder
+# TARGET_PLATFORM must be linux/amd64 — the ISO is always x86_64 regardless of host arch
+ARG TARGET_PLATFORM=linux/amd64
+FROM --platform=${TARGET_PLATFORM} ubuntu:${UBUNTU_VER} AS builder
 
 ARG VERSION=0.1.0
 ARG ARCH=amd64

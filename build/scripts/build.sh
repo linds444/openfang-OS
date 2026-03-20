@@ -23,9 +23,10 @@ mkdir -p "${ROOTFS}" "${OUTPUT_DIR}"
 section "Bootstrapping Ubuntu 24.04 LTS (Noble Numbat)"
 
 if [ ! -f "${ROOTFS}/etc/os-release" ]; then
+    # Note: apt-transport-https was merged into apt itself in Ubuntu 22.04+
     debootstrap \
         --arch="${ARCH}" \
-        --include="ca-certificates,apt-transport-https,gnupg,curl" \
+        --include="ca-certificates,gnupg,curl" \
         "${UBUNTU_VER}" \
         "${ROOTFS}" \
         http://archive.ubuntu.com/ubuntu/
