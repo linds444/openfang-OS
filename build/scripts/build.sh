@@ -235,7 +235,6 @@ apt-get install -y --no-install-recommends \
     e2fsprogs \
     dosfstools \
     ntfs-3g \
-    lsblk \
     smartmontools
 
 # ── Kernel & bootloader ─────────────────────────────────────────────────────
