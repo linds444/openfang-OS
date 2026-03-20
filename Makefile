@@ -63,6 +63,8 @@ check-deps:
 
 ## Build Docker build environment
 builder: check-deps
+	@echo "[*] Pulling ubuntu:$(UBUNTU_VER) base image (linux/amd64)..."
+	docker pull --platform linux/amd64 ubuntu:$(UBUNTU_VER)
 	@echo "[*] Building Docker build environment..."
 	docker build $(BUILD_ARGS) -t $(BUILDER_IMG) -f build/Dockerfile build/
 	@echo "[+] Builder ready: $(BUILDER_IMG) (linux/amd64)"
