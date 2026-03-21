@@ -311,8 +311,16 @@ cat > /etc/hosts << 'EOF'
 ::1         localhost ip6-localhost ip6-loopback
 EOF
 
+# Register aish as a valid shell before useradd (useradd validates against /etc/shells).
+# If the real binary wasn't installed in step 6, create a stub so the account is still
+# created correctly; the real binary will replace it when aish is built and deployed.
+if [ ! -x /usr/bin/aish ]; then
+    ln -sf /bin/bash /usr/bin/aish
+fi
+grep -qxF '/usr/bin/aish' /etc/shells || echo "/usr/bin/aish" >> /etc/shells
+
 # Create AI user (primary user)
-useradd -m -s /usr/bin/aish -c "AI User" -G sudo,audio,video,plugdev,netdev,bluetooth ai 2>/dev/null || true
+useradd -m -s /usr/bin/aish -c "AI User" -G sudo,audio,video,plugdev,netdev,bluetooth ai
 # Set a temporary password that must be changed on first login
 # Use pre-hashed password to avoid PAM failures in chroot environment
 echo "ai:$(openssl passwd -6 'openfang')" | chpasswd -e
@@ -369,9 +377,6 @@ EOF
 # Enable AppArmor
 sed -i 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="apparmor=1 security=apparmor"/' \
     /etc/default/grub 2>/dev/null || true
-
-# Register aish as a valid shell
-echo "/usr/bin/aish" >> /etc/shells
 
 # Create required directories
 mkdir -p \
