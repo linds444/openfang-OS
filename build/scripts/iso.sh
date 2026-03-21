@@ -157,13 +157,18 @@ mcopy -i "${ISO_WORK}/boot/efi.img" \
 # ─── Build BIOS GRUB image ───────────────────────────────────────────────────
 section "Building BIOS GRUB image"
 
-grub-mkstandalone \
+# Copy i386-pc modules onto the ISO so GRUB can load them at runtime.
+# grub-mkimage only embeds the boot seed; the rest are loaded from the ISO.
+mkdir -p "${ISO_WORK}/boot/grub/i386-pc"
+cp /usr/lib/grub/i386-pc/*.mod "${ISO_WORK}/boot/grub/i386-pc/"
+cp /usr/lib/grub/i386-pc/*.lst "${ISO_WORK}/boot/grub/i386-pc/" 2>/dev/null || true
+
+grub-mkimage \
     --format=i386-pc \
     --output="${ISO_WORK}/boot/grub/core.img" \
-    --install-modules="linux normal iso9660 biosdisk memdisk search tar ls" \
-    --modules="linux normal iso9660 biosdisk search" \
+    --prefix="(cd)/boot/grub" \
     --locales="" \
-    "boot/grub/grub.cfg=${ISO_WORK}/boot/grub/grub.cfg"
+    linux normal iso9660 biosdisk search
 
 cat /usr/lib/grub/i386-pc/cdboot.img \
     "${ISO_WORK}/boot/grub/core.img" \
