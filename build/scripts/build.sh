@@ -314,7 +314,8 @@ EOF
 # Create AI user (primary user)
 useradd -m -s /usr/bin/aish -c "AI User" -G sudo,audio,video,plugdev,netdev,bluetooth ai 2>/dev/null || true
 # Set a temporary password that must be changed on first login
-echo "ai:openfang" | chpasswd
+# Use pre-hashed password to avoid PAM failures in chroot environment
+echo "ai:$(openssl passwd -6 'openfang')" | chpasswd -e
 chage -d 0 ai  # Force password change on first login
 
 # Also create a normal sudo user for setup
