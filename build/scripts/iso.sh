@@ -160,7 +160,7 @@ section "Building BIOS GRUB image"
 grub-mkstandalone \
     --format=i386-pc \
     --output="${ISO_WORK}/boot/grub/core.img" \
-    --install-modules="linux normal iso9660 biosdisk memdisk search tar ls all_video gfxterm png" \
+    --install-modules="linux normal iso9660 biosdisk memdisk search tar ls" \
     --modules="linux normal iso9660 biosdisk search" \
     --locales="" \
     "boot/grub/grub.cfg=${ISO_WORK}/boot/grub/grub.cfg"
