@@ -138,7 +138,9 @@ apt-get install -y --no-install-recommends \
     dnsutils \
     wireless-tools \
     wpasupplicant \
-    rfkill
+    rfkill \
+    bluez \
+    blueman
 
 # ── Desktop — Display server + XFCE ─────────────────────────────────────────
 apt-get install -y --no-install-recommends \
