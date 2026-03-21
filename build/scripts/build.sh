@@ -239,7 +239,6 @@ apt-get install -y --no-install-recommends \
 apt-get install -y \
     linux-image-generic \
     linux-headers-generic \
-    grub-pc \
     grub-efi-amd64 \
     grub-efi-amd64-signed \
     shim-signed \
