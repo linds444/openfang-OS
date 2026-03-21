@@ -1,6 +1,11 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=VLC Media Player
+Comment=Play audio and video files
 Icon=vlc
-URL=/usr/share/applications/vlc.desktop
+Exec=vlc %U
+Terminal=false
+Categories=AudioVideo;Player;
+MimeType=video/mpeg;audio/mpeg;video/mp4;audio/ogg;
+StartupNotify=true

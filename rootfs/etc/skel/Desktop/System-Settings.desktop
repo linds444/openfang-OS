@@ -1,6 +1,10 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=System Settings
+Comment=Configure your desktop
 Icon=preferences-system
-URL=/usr/share/applications/xfce4-settings-manager.desktop
+Exec=xfce4-settings-manager
+Terminal=false
+Categories=Settings;DesktopSettings;
+StartupNotify=true

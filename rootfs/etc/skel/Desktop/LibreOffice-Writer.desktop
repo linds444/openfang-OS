@@ -1,6 +1,11 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=LibreOffice Writer
+Comment=Create and edit text documents
 Icon=libreoffice-writer
-URL=/usr/share/applications/libreoffice-writer.desktop
+Exec=libreoffice --writer %U
+Terminal=false
+Categories=Office;WordProcessor;
+MimeType=application/vnd.oasis.opendocument.text;application/msword;
+StartupNotify=true

@@ -1,6 +1,10 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=Calculator
+Comment=Perform calculations
 Icon=accessories-calculator
-URL=/usr/share/applications/org.gnome.Calculator.desktop
+Exec=gnome-calculator
+Terminal=false
+Categories=Utility;Calculator;
+StartupNotify=true

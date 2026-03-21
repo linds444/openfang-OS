@@ -1,6 +1,11 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=Text Editor
+Comment=Edit text files
 Icon=accessories-text-editor
-URL=/usr/share/applications/org.xfce.mousepad.desktop
+Exec=mousepad %F
+Terminal=false
+Categories=Utility;TextEditor;
+MimeType=text/plain;
+StartupNotify=true

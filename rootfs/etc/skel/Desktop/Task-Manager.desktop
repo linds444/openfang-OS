@@ -1,6 +1,10 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=Task Manager
+Comment=Monitor and manage running processes
 Icon=xfce4-taskmanager
-URL=/usr/share/applications/xfce4-taskmanager.desktop
+Exec=xfce4-taskmanager
+Terminal=false
+Categories=System;Monitor;
+StartupNotify=true

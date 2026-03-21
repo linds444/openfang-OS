@@ -1,6 +1,10 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=Files
+Comment=Browse files and folders
 Icon=system-file-manager
-URL=/usr/share/applications/thunar.desktop
+Exec=thunar
+Terminal=false
+Categories=System;FileManager;
+StartupNotify=true

@@ -1,6 +1,11 @@
 [Desktop Entry]
 Version=1.0
-Type=Link
+Type=Application
 Name=LibreOffice Calc
+Comment=Create and edit spreadsheets
 Icon=libreoffice-calc
-URL=/usr/share/applications/libreoffice-calc.desktop
+Exec=libreoffice --calc %U
+Terminal=false
+Categories=Office;Spreadsheet;
+MimeType=application/vnd.oasis.opendocument.spreadsheet;application/vnd.ms-excel;
+StartupNotify=true

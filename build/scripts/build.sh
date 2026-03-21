@@ -157,20 +157,9 @@ apt-get install -y --no-install-recommends \
     xfce4 \
     xfce4-goodies \
     xfce4-terminal \
-    xfce4-whiskermenu-plugin \
     xfce4-notifyd \
-    xfce4-screensaver \
-    xfce4-power-manager \
-    xfce4-taskmanager \
-    xfce4-screenshooter \
-    xfce4-clipman-plugin \
     xfce4-pulseaudio-plugin \
-    thunar \
-    thunar-archive-plugin \
     thunar-media-tags-plugin \
-    mousepad \
-    ristretto \
-    xfburn \
     pavucontrol \
     xdg-user-dirs \
     xdg-utils \
@@ -343,6 +332,15 @@ chage -d 0 ai  # Force password change on first login
 
 # Also create a normal sudo user for setup
 usermod -aG sudo ai
+
+# Explicitly populate ai's home from /etc/skel.
+# useradd -m skips skel copy when /home/ai already exists (created by the
+# rootfs overlay rsync in the previous build step), so we do it manually.
+# -n = don't overwrite files already in place (e.g. .aish_config).
+cp -rn /etc/skel/. /home/ai/
+# Make every Desktop .desktop file executable so XFCE trusts it immediately
+chmod +x /home/ai/Desktop/*.desktop 2>/dev/null || true
+chown -R ai:ai /home/ai/
 
 # Autologin for live environment
 mkdir -p /etc/lightdm/lightdm.conf.d
