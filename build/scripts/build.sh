@@ -322,7 +322,9 @@ fi
 grep -qxF '/usr/bin/aish' /etc/shells || echo "/usr/bin/aish" >> /etc/shells
 
 # Create AI user (primary user)
-useradd -m -s /usr/bin/aish -c "AI User" -G sudo,audio,video,plugdev,netdev,bluetooth ai
+if ! id -u ai &>/dev/null; then
+    useradd -m -s /usr/bin/aish -c "AI User" -G sudo,audio,video,plugdev,netdev,bluetooth ai
+fi
 # Set a temporary password that must be changed on first login
 # Use pre-hashed password to avoid PAM failures in chroot environment
 echo "ai:$(openssl passwd -6 'openfang')" | chpasswd -e
