@@ -167,7 +167,6 @@ grub-mkimage \
     --format=i386-pc \
     --output="${ISO_WORK}/boot/grub/core.img" \
     --prefix="(cd)/boot/grub" \
-    --locales="" \
     linux normal iso9660 biosdisk search
 
 cat /usr/lib/grub/i386-pc/cdboot.img \
