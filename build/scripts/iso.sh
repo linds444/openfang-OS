@@ -89,6 +89,12 @@ set default=0
 set timeout=10
 set timeout_style=menu
 
+# Locate the ISO device so absolute paths (e.g. /casper/vmlinuz) resolve
+# correctly whether booting via BIOS or UEFI (grub-mkstandalone boots with
+# root=(memdisk) by default, so we must search for the real device first).
+insmod search
+search --no-floppy --file --set=root /.disk/info
+
 insmod all_video
 insmod gfxterm
 insmod png
