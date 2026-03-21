@@ -149,7 +149,7 @@ grub-mkstandalone \
 
 # EFI boot partition image (for ISO)
 dd if=/dev/zero of="${ISO_WORK}/boot/efi.img" bs=1M count=10
-mkfs.vfat -n "OPENFANG_EFI" "${ISO_WORK}/boot/efi.img"
+mkfs.vfat -n "OPENFANG-EFI" "${ISO_WORK}/boot/efi.img"
 mmd -i "${ISO_WORK}/boot/efi.img" ::EFI ::EFI/BOOT
 mcopy -i "${ISO_WORK}/boot/efi.img" \
     "${ISO_WORK}/EFI/BOOT/BOOTX64.EFI" ::EFI/BOOT/
