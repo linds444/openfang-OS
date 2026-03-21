@@ -1,0 +1,6 @@
+[Desktop Entry]
+Version=1.0
+Type=Link
+Name=Calculator
+Icon=accessories-calculator
+URL=/usr/share/applications/org.gnome.Calculator.desktop

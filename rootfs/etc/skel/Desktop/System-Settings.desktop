@@ -1,0 +1,6 @@
+[Desktop Entry]
+Version=1.0
+Type=Link
+Name=System Settings
+Icon=preferences-system
+URL=/usr/share/applications/xfce4-settings-manager.desktop

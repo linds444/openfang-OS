@@ -162,12 +162,20 @@ apt-get install -y --no-install-recommends \
     xfce4-screensaver \
     xfce4-power-manager \
     xfce4-taskmanager \
+    xfce4-screenshooter \
+    xfce4-clipman-plugin \
+    xfce4-pulseaudio-plugin \
     thunar \
     thunar-archive-plugin \
+    thunar-media-tags-plugin \
     mousepad \
     ristretto \
     xfburn \
-    pavucontrol
+    pavucontrol \
+    xdg-user-dirs \
+    xdg-utils \
+    dconf-editor \
+    gdebi
 
 # ── Web browser (Firefox from Mozilla, not snap) ────────────────────────────
 apt-get install -y --no-install-recommends firefox
@@ -250,6 +258,7 @@ apt-get install -y \
 # ── Misc utilities ──────────────────────────────────────────────────────────
 apt-get install -y --no-install-recommends \
     htop \
+    neofetch \
     tree \
     unzip \
     zip \
@@ -263,7 +272,9 @@ apt-get install -y --no-install-recommends \
     gstreamer1.0-plugins-base \
     gstreamer1.0-plugins-good \
     gstreamer1.0-plugins-bad \
-    gstreamer1.0-plugins-ugly
+    gstreamer1.0-plugins-ugly \
+    baobab \
+    gnome-disk-utility
 
 # ── Locale & time ───────────────────────────────────────────────────────────
 locale-gen en_US.UTF-8
@@ -388,6 +399,18 @@ mkdir -p \
     /var/log/openfang/agents \
     /data/openfang \
     /var/lib/openfang/security
+
+# Set up XDG user directories for the ai user (Desktop, Documents, Downloads, etc.)
+su - ai -s /bin/bash -c "xdg-user-dirs-update" 2>/dev/null || true
+
+# Register xdg-user-dirs update on first login for all users via /etc/skel
+cat > /etc/profile.d/xdg-user-dirs.sh << 'EOF'
+# Create standard XDG user directories on first login
+if [ -n "$HOME" ] && [ -z "$XDG_DIRS_INITIALIZED" ]; then
+    xdg-user-dirs-update 2>/dev/null || true
+    export XDG_DIRS_INITIALIZED=1
+fi
+EOF
 
 CHROOT
 

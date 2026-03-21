@@ -1,0 +1,6 @@
+[Desktop Entry]
+Version=1.0
+Type=Link
+Name=VLC Media Player
+Icon=vlc
+URL=/usr/share/applications/vlc.desktop

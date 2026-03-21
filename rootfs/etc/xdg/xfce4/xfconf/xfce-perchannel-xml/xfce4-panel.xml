@@ -9,7 +9,7 @@
     <property name="position" type="string" value="p=6;x=0;y=0"/>
     <property name="length" type="uint" value="100"/>
     <property name="position-locked" type="bool" value="true"/>
-    <property name="size" type="uint" value="32"/>
+    <property name="size" type="uint" value="36"/>
     <property name="plugin-ids" type="array">
       <value type="int" value="1"/>
       <value type="int" value="2"/>
@@ -23,6 +23,10 @@
       <value type="int" value="10"/>
       <value type="int" value="11"/>
       <value type="int" value="12"/>
+      <value type="int" value="13"/>
+      <value type="int" value="14"/>
+      <value type="int" value="15"/>
+      <value type="int" value="16"/>
     </property>
     <property name="background-style" type="uint" value="1"/>
     <property name="background-color" type="string" value="#1a1a2e"/>
@@ -41,7 +45,7 @@
       <property name="style" type="uint" value="0"/>
       <property name="expand" type="bool" value="false"/>
     </property>
-    <!-- Pinned apps: Browser, Files, Terminal, AI -->
+    <!-- Pinned apps: Browser, Files, Terminal, Text Editor, LibreOffice, VLC, AI -->
     <property name="plugin-3" type="string" value="launcher">
       <property name="items" type="array">
         <value type="string" value="firefox.desktop"/>
@@ -59,38 +63,54 @@
     </property>
     <property name="plugin-6" type="string" value="launcher">
       <property name="items" type="array">
+        <value type="string" value="org.xfce.mousepad.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-7" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="libreoffice-writer.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-8" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="vlc.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-9" type="string" value="launcher">
+      <property name="items" type="array">
         <value type="string" value="openfang-assistant.desktop"/>
       </property>
     </property>
+    <!-- Show Desktop -->
+    <property name="plugin-10" type="string" value="showdesktop"/>
     <!-- Spacer -->
-    <property name="plugin-7" type="string" value="separator">
+    <property name="plugin-11" type="string" value="separator">
       <property name="style" type="uint" value="0"/>
       <property name="expand" type="bool" value="true"/>
     </property>
     <!-- Taskbar -->
-    <property name="plugin-8" type="string" value="tasklist">
+    <property name="plugin-12" type="string" value="tasklist">
       <property name="grouping" type="uint" value="1"/>
       <property name="show-labels" type="bool" value="true"/>
       <property name="show-handle" type="bool" value="false"/>
       <property name="flat-buttons" type="bool" value="true"/>
     </property>
     <!-- Spacer -->
-    <property name="plugin-9" type="string" value="separator">
+    <property name="plugin-13" type="string" value="separator">
       <property name="style" type="uint" value="0"/>
       <property name="expand" type="bool" value="true"/>
     </property>
     <!-- System tray -->
-    <property name="plugin-10" type="string" value="systray">
+    <property name="plugin-14" type="string" value="systray">
       <property name="size-max" type="uint" value="22"/>
     </property>
-    <!-- Network Manager applet -->
-    <property name="plugin-11" type="string" value="launcher">
-      <property name="items" type="array">
-        <value type="string" value="nm-applet.desktop"/>
-      </property>
+    <!-- PulseAudio volume control -->
+    <property name="plugin-15" type="string" value="pulseaudio">
+      <property name="enable-keyboard-shortcuts" type="bool" value="true"/>
+      <property name="show-notifications" type="bool" value="true"/>
     </property>
     <!-- Clock -->
-    <property name="plugin-12" type="string" value="clock">
+    <property name="plugin-16" type="string" value="clock">
       <property name="digital-format" type="string" value="%a %b %-d  %H:%M"/>
       <property name="mode" type="uint" value="2"/>
     </property>

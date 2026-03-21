@@ -1,0 +1,6 @@
+[Desktop Entry]
+Version=1.0
+Type=Link
+Name=Terminal
+Icon=utilities-terminal
+URL=/usr/share/applications/xfce4-terminal.desktop

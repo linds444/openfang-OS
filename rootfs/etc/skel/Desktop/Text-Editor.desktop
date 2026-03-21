@@ -1,0 +1,6 @@
+[Desktop Entry]
+Version=1.0
+Type=Link
+Name=Text Editor
+Icon=accessories-text-editor
+URL=/usr/share/applications/org.xfce.mousepad.desktop

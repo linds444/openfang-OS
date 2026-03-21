@@ -3,7 +3,7 @@
 <channel name="xfce4-desktop" version="1.0">
   <property name="desktop-icons" type="empty">
     <property name="style" type="int" value="2"/>
-    <property name="icon-size" type="uint" value="48"/>
+    <property name="icon-size" type="uint" value="52"/>
     <property name="tooltip-size" type="double" value="128"/>
     <property name="use-custom-font-size" type="bool" value="true"/>
     <property name="custom-font-size" type="double" value="12"/>
@@ -17,7 +17,40 @@
   </property>
   <property name="backdrop" type="empty">
     <property name="screen0" type="empty">
+      <!-- Virtual / QEMU display -->
       <property name="monitorVirtual-1" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/openfang/wallpaper.png"/>
+        </property>
+      </property>
+      <!-- HDMI output -->
+      <property name="monitorHDMI-1" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/openfang/wallpaper.png"/>
+        </property>
+      </property>
+      <!-- DisplayPort output -->
+      <property name="monitorDP-1" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/openfang/wallpaper.png"/>
+        </property>
+      </property>
+      <!-- Laptop internal display -->
+      <property name="monitoreDP-1" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/openfang/wallpaper.png"/>
+        </property>
+      </property>
+      <!-- VGA output -->
+      <property name="monitorVGA-1" type="empty">
         <property name="workspace0" type="empty">
           <property name="color-style" type="int" value="0"/>
           <property name="image-style" type="int" value="5"/>
