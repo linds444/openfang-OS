@@ -61,7 +61,7 @@ mksquashfs "${ROOTFS}" "${ISO_WORK}/casper/filesystem.squashfs" \
     -e "var/cache/apt/*" \
     -e "var/lib/apt/lists/*"
 
-printf $(du -sx --block-size=1 "${ROOTFS}" | cut -f1) \
+du -sx --block-size=1 "${ROOTFS}" | cut -f1 \
     > "${ISO_WORK}/casper/filesystem.size"
 
 log "Squashfs: $(du -sh ${ISO_WORK}/casper/filesystem.squashfs | cut -f1)"

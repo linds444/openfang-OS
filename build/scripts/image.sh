@@ -92,12 +92,12 @@ log "Extracting system..."
 # Mount and extract the squashfs from the ISO
 mkdir -p /mnt/iso
 mount -o loop,ro "${OUTPUT_DIR}/${ISO_NAME}" /mnt/iso
-unsquashfs -f -d /mnt/openfang /mnt/iso/openfang.squashfs
-umount /mnt/iso
+unsquashfs -f -d /mnt/openfang /mnt/iso/casper/filesystem.squashfs
 
-# Copy kernel and initramfs
-cp /mnt/iso/boot/vmlinuz  /mnt/openfang/boot/
-cp /mnt/iso/boot/initramfs /mnt/openfang/boot/
+# Copy kernel and initramfs before unmounting the ISO
+cp /mnt/iso/casper/vmlinuz    /mnt/openfang/boot/vmlinuz
+cp /mnt/iso/casper/initrd     /mnt/openfang/boot/initramfs
+umount /mnt/iso
 
 # ─── Install GRUB ─────────────────────────────────────────────────────────────
 log "Installing GRUB..."
@@ -173,7 +173,7 @@ chroot /mnt/openfang grub-install \
     --target=i386-pc \
     "${LOOP}"
 
-for bind in proc sys dev/pts dev; do
+for bind in dev/pts dev sys proc; do
     umount "/mnt/openfang/$bind"
 done
 
