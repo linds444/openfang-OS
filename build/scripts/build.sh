@@ -137,10 +137,12 @@ apt-get install -y --no-install-recommends \
     net-tools \
     dnsutils \
     wireless-tools \
+    iw \
     wpasupplicant \
     rfkill \
     bluez \
-    blueman
+    blueman \
+    linux-firmware
 
 # ── Desktop — Display server + XFCE ─────────────────────────────────────────
 apt-get install -y --no-install-recommends \
