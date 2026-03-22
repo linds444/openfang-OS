@@ -335,10 +335,6 @@ GRUB_ENABLE_CRYPTODISK=y
 GRUB_PRELOAD_MODULES="part_gpt part_msdos luks2 cryptodisk"
 EOF
 
-    # Update initramfs to include crypto
-    echo "CRYPTROOT=target=openfang_root,source=UUID=${LUKS_UUID}" \
-        >> /mnt/openfang/etc/crypttab
-
     # Bind mounts
     for fs in proc sys dev dev/pts; do
         mount --bind "/$fs" "/mnt/openfang/$fs"

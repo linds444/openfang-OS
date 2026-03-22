@@ -382,16 +382,6 @@ cp -rn /etc/skel/. /home/ai/
 chmod +x /home/ai/Desktop/*.desktop 2>/dev/null || true
 chown -R ai:ai /home/ai/
 
-# Autologin for live environment
-mkdir -p /etc/lightdm/lightdm.conf.d
-cat > /etc/lightdm/lightdm.conf.d/50-openfang.conf << 'EOF'
-[SeatDefaults]
-autologin-user=ai
-autologin-user-timeout=0
-user-session=xfce
-greeter-session=lightdm-gtk-greeter
-EOF
-
 # Enable essential services
 systemctl enable lightdm
 systemctl enable NetworkManager
