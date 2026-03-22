@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Webcam
+Comment=Take photos and record video with your webcam
+Icon=cheese
+Exec=cheese
+Terminal=false
+Categories=AudioVideo;Video;
+StartupNotify=true

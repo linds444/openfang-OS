@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Disks
+Comment=Manage drives and partitions
+Icon=gnome-disks
+Exec=gnome-disks
+Terminal=false
+Categories=System;
+StartupNotify=true

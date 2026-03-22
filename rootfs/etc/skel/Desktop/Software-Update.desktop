@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Software Updater
+Comment=Keep your system up to date
+Icon=system-software-update
+Exec=update-manager
+Terminal=false
+Categories=System;
+StartupNotify=true

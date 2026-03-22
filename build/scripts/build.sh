@@ -226,6 +226,44 @@ apt-get install -y --no-install-recommends \
     nodejs \
     npm
 
+# ── Printing ────────────────────────────────────────────────────────────────
+apt-get install -y --no-install-recommends \
+    cups \
+    cups-bsd \
+    cups-pk-helper \
+    printer-driver-all \
+    system-config-printer \
+    system-config-printer-udev
+
+# ── File manager integration (USB auto-mount, thumbnails, MTP/Android) ───────
+apt-get install -y --no-install-recommends \
+    gvfs \
+    gvfs-backends \
+    gvfs-fuse \
+    gvfs-mtp \
+    gvfs-dav \
+    libmtp-runtime \
+    thunar-volman \
+    tumbler \
+    tumbler-plugins-extra
+
+# ── System management GUIs ──────────────────────────────────────────────────
+apt-get install -y --no-install-recommends \
+    gufw \
+    update-manager \
+    software-properties-gtk \
+    upower
+
+# ── Peripherals & media capture ─────────────────────────────────────────────
+apt-get install -y --no-install-recommends \
+    cheese \
+    simple-scan
+
+# ── Backup & file search ─────────────────────────────────────────────────────
+apt-get install -y --no-install-recommends \
+    deja-dup \
+    catfish
+
 # ── Disk & filesystem ───────────────────────────────────────────────────────
 apt-get install -y --no-install-recommends \
     gparted \
@@ -359,11 +397,19 @@ systemctl enable ssh
 systemctl enable ufw
 systemctl enable apparmor
 systemctl enable fail2ban
+systemctl enable bluetooth
+systemctl enable cups
+systemctl enable openfang-first-boot.service
 
 # Enable the update timer so installs get OS + OpenFang updates automatically.
 # Controlled at runtime by: systemctl enable/disable openfang-update.timer
 # and the auto_update setting in /etc/openfang/config.toml.
 systemctl enable openfang-update.timer
+
+# Enable the OpenFang AI runtime. The service uses ConditionPathExists so it
+# will silently skip start-up until the openfang binary is actually installed
+# (e.g. after the user runs 'openfang-ctl update' or a full release build).
+systemctl enable openfang.service
 
 # Disable services not needed
 systemctl disable ModemManager 2>/dev/null || true

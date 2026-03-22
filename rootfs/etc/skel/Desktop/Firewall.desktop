@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Firewall
+Comment=Configure the network firewall
+Icon=gufw
+Exec=gufw
+Terminal=false
+Categories=System;Settings;
+StartupNotify=true

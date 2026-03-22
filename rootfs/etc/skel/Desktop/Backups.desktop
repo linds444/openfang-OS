@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Backups
+Comment=Backup and restore your files
+Icon=deja-dup
+Exec=deja-dup
+Terminal=false
+Categories=Utility;
+StartupNotify=true

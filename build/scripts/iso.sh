@@ -89,15 +89,32 @@ set default=0
 set timeout=10
 set timeout_style=menu
 
-# Locate the ISO device so absolute paths (e.g. /casper/vmlinuz) resolve
-# correctly whether booting via BIOS or UEFI (grub-mkstandalone boots with
-# root=(memdisk) by default, so we must search for the real device first).
-insmod search
-search --no-floppy --file --set=root /.disk/info
-
+# ── Load filesystem and partition modules ──────────────────────────────────
+# These must come before any 'search' or 'linux' commands.
+insmod part_gpt
+insmod part_msdos
+insmod iso9660
+insmod fat
+insmod ext2
 insmod all_video
 insmod gfxterm
 insmod png
+
+# ── Locate the boot device ─────────────────────────────────────────────────
+# Use the ISO volume label (OPENFANG_OS) — this is unique to our USB/disc and
+# will NOT match the host system's Ubuntu partition (which caused the old
+# "search --file /.disk/info" to land on the wrong drive and break vmlinuz).
+insmod search_label
+if search --no-floppy --label --set=root OPENFANG_OS; then
+    true
+else
+    # Fallback for environments where label search is unavailable
+    insmod search_fs_file
+    search --no-floppy --file --set=root /.disk/info
+fi
+
+set gfxmode=auto
+terminal_output gfxterm
 
 # Colors
 set color_normal=white/black
@@ -143,6 +160,18 @@ if [ -f "/rootfs/usr/share/openfang/splash.png" ]; then
     cp /rootfs/usr/share/openfang/splash.png "${ISO_WORK}/boot/grub/"
 fi
 
+# ── loopback.cfg ─────────────────────────────────────────────────────────────
+# Allows booting the ISO from an installed OS's GRUB (the "dual boot" use-case
+# where the ISO file sits on an existing Linux/Windows partition). The host
+# GRUB calls: loopback loop /path/to/openfang.iso; configfile (loop)/boot/grub/loopback.cfg
+cat > "${ISO_WORK}/boot/grub/loopback.cfg" << LOOPBACK
+# OpenFang OS — loopback boot configuration
+# Used when GRUB boots the ISO as a loopback device from an installed system.
+set root=(loop)
+linux  /casper/vmlinuz boot=casper iso-scan/filename=\${iso_path} quiet splash apparmor=1 security=apparmor mitigations=auto kaslr
+initrd /casper/initrd
+LOOPBACK
+
 # ─── Build GRUB EFI image ────────────────────────────────────────────────────
 section "Building GRUB EFI image"
 
@@ -173,7 +202,8 @@ grub-mkimage \
     --format=i386-pc \
     --output="${ISO_WORK}/boot/grub/core.img" \
     --prefix="(cd)/boot/grub" \
-    linux normal iso9660 biosdisk search
+    linux normal iso9660 biosdisk search search_label search_fs_file \
+    part_gpt part_msdos fat ext2 all_video gfxterm png
 
 cat /usr/lib/grub/i386-pc/cdboot.img \
     "${ISO_WORK}/boot/grub/core.img" \

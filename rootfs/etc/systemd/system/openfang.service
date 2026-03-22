@@ -4,6 +4,9 @@ Documentation=https://github.com/RightNow-AI/openfang
 After=network-online.target apparmor.service
 Wants=network-online.target
 Requires=dbus.service
+# Don't attempt to start until the binary is installed (avoids restart loops
+# on live/fresh builds where openfang hasn't been deployed yet).
+ConditionPathExists=/usr/bin/openfang
 
 [Service]
 Type=notify

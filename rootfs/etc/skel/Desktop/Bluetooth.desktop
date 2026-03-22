@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Bluetooth Manager
+Comment=Connect and manage Bluetooth devices
+Icon=bluetooth
+Exec=blueman-manager
+Terminal=false
+Categories=System;Settings;
+StartupNotify=true

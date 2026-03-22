@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Document Scanner
+Comment=Scan documents and images
+Icon=simple-scan
+Exec=simple-scan
+Terminal=false
+Categories=Graphics;Scanning;
+StartupNotify=true

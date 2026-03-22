@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Printers
+Comment=Configure printers and printing
+Icon=printer
+Exec=system-config-printer
+Terminal=false
+Categories=System;Settings;
+StartupNotify=true
