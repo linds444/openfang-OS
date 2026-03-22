@@ -86,6 +86,14 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 export LANG=C.UTF-8
 
+# Remove any stale dpkg/apt lock files left by debootstrap.
+# "held by process 0" means the lock file exists but the owning process is
+# gone; apt-get refuses to run until the locks are cleared.
+rm -f /var/lib/dpkg/lock-frontend \
+      /var/lib/dpkg/lock \
+      /var/cache/apt/archives/lock
+dpkg --configure -a
+
 # Enable 32-bit (i386) multiarch before the first apt-get update so the
 # package index is fetched for both amd64 and i386 in a single pass.
 # Doing this AFTER apt-get upgrade would cause apt to re-evaluate multiarch
