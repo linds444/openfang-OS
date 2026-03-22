@@ -86,6 +86,14 @@ set -e
 export DEBIAN_FRONTEND=noninteractive
 export LANG=C.UTF-8
 
+# Enable 32-bit (i386) multiarch before the first apt-get update so the
+# package index is fetched for both amd64 and i386 in a single pass.
+# Doing this AFTER apt-get upgrade would cause apt to re-evaluate multiarch
+# compatibility for already-installed packages mid-session and can corrupt
+# libapt-pkg.so symlinks, making subsequent apt-get calls fail to load the
+# library.
+dpkg --add-architecture i386
+
 apt-get update
 
 # Upgrade base system
@@ -306,8 +314,6 @@ apt-get install -y --no-install-recommends \
     gnome-disk-utility
 
 # ── Windows compatibility (Wine) ─────────────────────────────────────────────
-dpkg --add-architecture i386
-apt-get update
 apt-get install -y --no-install-recommends \
     wine \
     wine32:i386 \
@@ -337,15 +343,14 @@ section "Installing OpenFang binaries"
 
 if [ -f "/output/bin/aish" ]; then
     install -m 755 /output/bin/aish "${ROOTFS}/usr/bin/aish"
+    ln -sf /usr/bin/aish "${ROOTFS}/usr/local/bin/aish"
     log "Installed aish"
 fi
 if [ -f "/output/bin/openfang-ctl" ]; then
     install -m 755 /output/bin/openfang-ctl "${ROOTFS}/usr/bin/openfang-ctl"
+    ln -sf /usr/bin/openfang-ctl "${ROOTFS}/usr/local/bin/ofs"
     log "Installed openfang-ctl"
 fi
-# Create symlinks for convenience
-ln -sf /usr/bin/openfang-ctl "${ROOTFS}/usr/local/bin/ofs"
-ln -sf /usr/bin/aish         "${ROOTFS}/usr/local/bin/aish"
 
 # ─── Step 7: Configure the system ────────────────────────────────────────────
 section "Configuring system"
