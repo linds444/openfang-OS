@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Wine Center
+Comment=Run Windows applications and configure Wine
+Icon=wine
+Exec=winecfg
+Terminal=false
+Categories=System;Emulator;
+StartupNotify=true

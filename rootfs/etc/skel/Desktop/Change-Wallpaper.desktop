@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Change Wallpaper
+Comment=Change the desktop background image
+Icon=preferences-desktop-wallpaper
+Exec=xfdesktop --settings
+Terminal=false
+Categories=Settings;DesktopSettings;
+StartupNotify=false

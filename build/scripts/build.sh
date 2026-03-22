@@ -305,6 +305,15 @@ apt-get install -y --no-install-recommends \
     baobab \
     gnome-disk-utility
 
+# ── Windows compatibility (Wine) ─────────────────────────────────────────────
+dpkg --add-architecture i386
+apt-get update
+apt-get install -y --no-install-recommends \
+    wine \
+    wine32:i386 \
+    wine64 \
+    winetricks
+
 # ── Locale & time ───────────────────────────────────────────────────────────
 locale-gen en_US.UTF-8
 update-locale LANG=en_US.UTF-8
