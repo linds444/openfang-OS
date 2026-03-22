@@ -398,6 +398,14 @@ usermod -aG sudo ai
 # rootfs overlay rsync in the previous build step), so we do it manually.
 # -n = don't overwrite files already in place (e.g. .aish_config).
 cp -rn /etc/skel/. /home/ai/
+# The skel xfconf directory is intentionally empty (to avoid overwriting user
+# config on existing installs), but xfconfd won't fall back to /etc/xdg when
+# the user directory already exists — even if it's empty. Copy the system
+# xfconf XMLs directly into the ai user's config dir so the panel, window
+# manager, and desktop settings are applied on first login.
+install -d /home/ai/.config/xfce4/xfconf/xfce-perchannel-xml
+cp -n /etc/xdg/xfce4/xfconf/xfce-perchannel-xml/*.xml \
+      /home/ai/.config/xfce4/xfconf/xfce-perchannel-xml/ 2>/dev/null || true
 # Make every Desktop .desktop file executable so XFCE trusts it immediately
 chmod +x /home/ai/Desktop/*.desktop 2>/dev/null || true
 chown -R ai:ai /home/ai/

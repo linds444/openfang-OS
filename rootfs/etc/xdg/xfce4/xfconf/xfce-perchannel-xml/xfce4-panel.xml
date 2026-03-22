@@ -24,7 +24,6 @@
       <value type="int" value="11"/>
       <value type="int" value="12"/>
       <value type="int" value="13"/>
-      <value type="int" value="17"/>
       <value type="int" value="14"/>
       <value type="int" value="15"/>
       <value type="int" value="16"/>
@@ -101,9 +100,7 @@
       <property name="style" type="uint" value="0"/>
       <property name="expand" type="bool" value="true"/>
     </property>
-    <!-- StatusNotifier tray (SNI/AppIndicator — modern apps: nm-applet, blueman, etc.) -->
-    <property name="plugin-17" type="string" value="statusnotifier"/>
-    <!-- System tray (XEmbed legacy fallback — older Qt/GTK2 apps) -->
+    <!-- System tray: handles both XEmbed (legacy) and SNI/AppIndicator natively in XFCE 4.18 -->
     <property name="plugin-14" type="string" value="systray">
       <property name="size-max" type="uint" value="22"/>
     </property>
