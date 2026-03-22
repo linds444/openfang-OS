@@ -258,8 +258,6 @@ apt-get install -y --no-install-recommends \
     gvfs \
     gvfs-backends \
     gvfs-fuse \
-    gvfs-mtp \
-    gvfs-dav \
     libmtp-runtime \
     thunar-volman \
     tumbler \
